@@ -152,7 +152,7 @@ PREFIX=!
 
 # --- PENGATURAN PENGEMBANGAN ---
 # Atur ke 'true' untuk membuat bot hanya merespon owner.
-DEVELOPMENT_MODE_ENABLED=false
+DEVELOPMENT_MODE=false
 # Ganti dengan nomor WhatsApp Anda (format: 628xxxxxxxxxx@s.whatsapp.net)
 BOT_OWNER_JID=
 
