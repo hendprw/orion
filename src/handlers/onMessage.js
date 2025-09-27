@@ -1,28 +1,20 @@
 // orion/src/handlers/onMessage.js
 const { parseMessage } = require('../core/messageParser');
-const { validateArgs } = require('../core/commandValidator'); // <-- IMPORT VALIDATOR
 const logger = require('../utils/logger');
 
 /**
  * Handler utama untuk setiap pesan yang masuk.
- * @param {import('../core/Bot')} bot - Instance Bot utama
+ * @param {import('@whiskeysockets/baileys').WASocket} sock 
  * @param {object} m - M-Object dari Baileys
+ * @param {import('../core/commandHandler')} commandHandler
+ * @param {string} prefix
  */
-module.exports = async (bot, m) => {
+module.exports = async (sock, m, commandHandler, prefix) => {
     const msg = m.messages[0];
-    const { sock, commandHandler, prefix, middlewares } = bot; 
 
     try {
         const parsedM = await parseMessage(sock, msg);
         if (!parsedM) return;
-        
-        const isDevMode = process.env.DEVELOPMENT_MODE === 'true';
-        const ownerJid = process.env.BOT_OWNER_JID; // <-- PASTIKAN NAMA VARIABEL .ENV SESUAI
-
-        if (isDevMode && parsedM.sender !== ownerJid) {
-            logger.warn(`Pesan dari ${parsedM.sender.split('@')[0]} diabaikan (Development Mode).`);
-            return;
-        }
         
         if (!parsedM.body || !parsedM.body.startsWith(prefix)) return;
 
@@ -32,16 +24,8 @@ module.exports = async (bot, m) => {
         const command = commandHandler.getCommand(commandName);
         if (!command) return;
         
-        // --- BLOK VALIDASI BARU & LENGKAP ---
         parsedM.args = args;
         parsedM.command = commandName;
-
-        const validationResult = validateArgs(command, parsedM);
-        if (!validationResult.isValid) {
-            // Jika validasi gagal, kirim pesan balasan dan hentikan eksekusi.
-            return await sock.reply(parsedM, validationResult.reply);
-        }
-        // --- AKHIR BLOK VALIDASI ---
 
         // Gerbang (Guard Clauses)
         if (command.isGroupOnly && !parsedM.isGroup) {
@@ -50,13 +34,10 @@ module.exports = async (bot, m) => {
         if (command.isAdminOnly && !parsedM.isAdmin) {
              return await sock.reply(parsedM, 'Perintah ini hanya untuk admin grup.');
         }
-        if (command.isBotAdminOnly && !parsedM.isBotAdmin) {
+         if (command.isBotAdminOnly && !parsedM.isBotAdmin) {
              return await sock.reply(parsedM, 'Bot harus menjadi admin untuk menjalankan perintah ini.');
         }
 
-        // ... (sisa kode: cooldown, logger, middleware, execute)
-        // Tidak ada perubahan dari sini ke bawah
-        
         if (commandHandler.isUserOnCooldown(parsedM.sender, command)) {
             logger.warn({
                 sender: parsedM.sender,
@@ -68,22 +49,14 @@ module.exports = async (bot, m) => {
         logger.info({ 
             from: parsedM.sender.split('@')[0], 
             command: parsedM.command, 
-            group: parsedM.isGroup ? (await sock.groupMetadata(parsedM.chat)).subject : 'PM' 
+            group: parsedM.isGroup ? parsedM.groupMetadata.subject : 'PM' 
         }, 'Perintah diterima');
         
-        let middlewareIndex = 0;
-        const next = async () => {
-            if (middlewareIndex < middlewares.length) {
-                const currentMiddleware = middlewares[middlewareIndex];
-                middlewareIndex++;
-                await currentMiddleware(sock, parsedM, next);
-            } else {
-                await command.execute(sock, parsedM, commandHandler);
-            }
-        };
-
         try {
-            await next();
+            // --- PERBAIKAN DI SINI ---
+            // Sekarang meneruskan 'logger' sebagai argumen ketiga ke setiap perintah
+            await command.execute(sock, parsedM, logger);
+
         } catch (err) {
             logger.error({ 
                 err, 

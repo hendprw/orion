@@ -17,6 +17,7 @@ const msgRetryCounterCache = new NodeCache();
 
 class Bot {
     constructor(config = {}) {
+        // Penting: Pastikan dotenv.config() sudah dipanggil di file utama SEBELUM membuat instance Bot
         this.config = {
             sessionName: process.env.SESSION_NAME || 'session',
             prefix: process.env.PREFIX || '!',
@@ -25,9 +26,8 @@ class Bot {
             defaultCommandCooldown: 3,
             ...config,
         };
-        
-        this.middlewares = []; // Properti untuk menyimpan middleware
         this.sock = null;
+        // Sekarang meneruskan defaultCooldown ke constructor CommandHandler
         this.commandHandler = new CommandHandler(
             this.config.commandsPath, 
             logger, 
@@ -35,15 +35,6 @@ class Bot {
         );
         this.logger = logger;
         this.connect = this.connect.bind(this);
-    }
-
-    /**
-     * Mendaftarkan fungsi middleware.
-     * @param {Function} middlewareFn - Fungsi (sock, m, next) => void
-     */
-    use(middlewareFn) {
-        this.middlewares.push(middlewareFn);
-        this.logger.info(`Middleware baru ditambahkan: ${middlewareFn.name || 'anonymous'}`);
     }
 
     async connect() {
@@ -75,8 +66,10 @@ class Bot {
             this.commandHandler.commands.clear();
             this.commandHandler.aliases.clear();
 
+            // Muat perintah bawaan DULU
             this.commandHandler.loadBuiltinCommands();
             
+            // Muat perintah kustom PENGGUNA (bisa menimpa bawaan jika nama sama)
             if (this.config.commandsPath) {
                 this.commandHandler.loadCustomCommands();
                 this.commandHandler.watchCommands();
@@ -98,9 +91,7 @@ class Bot {
 
         this.sock.ev.on('creds.update', onCredsUpdate(saveCreds));
         this.sock.ev.on('connection.update', (update) => onConnectionUpdate(update, this.connect));
-        
-        // Meneruskan seluruh instance 'this' (bot) ke onMessage
-        this.sock.ev.on('messages.upsert', (m) => onMessage(this, m));
+        this.sock.ev.on('messages.upsert', (m) => onMessage(this.sock, m, this.commandHandler, this.config.prefix));
         
         this.sock.ev.on('group-participants.update', (update) => {
             builtinGroupUpdateHandler(this.sock, update);

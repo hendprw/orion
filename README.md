@@ -51,7 +51,7 @@ my-bot/
 This file is the heart of your bot.
 
 ```javascript
-// index.js
+//index.js
 require('dotenv').config();
 const { Bot } = require('orion-wa');
 const path = require('path');
@@ -65,14 +65,7 @@ const bot = new Bot({
     defaultCommandCooldown: 5 
 });
 
-// (Optional) Implement a middleware for logging command executions
-const loggerMiddleware = (sock, m, next) => {
-    console.log(`[EXEC] Command '${m.command}' from ${m.sender.split('@')[0]}`);
-    next(); // Pass control to the next middleware or command
-};
-bot.use(loggerMiddleware);
 
-// Connect the bot to WhatsApp
 bot.connect();
 ```
 
@@ -173,30 +166,6 @@ The `sock` object is decorated with numerous helper methods to simplify common a
     await sock.editMessage(sentMsg.key, 'Done!');
     ```
 
-### 🔹 The Middleware System
-
-Middleware functions are executed sequentially before a command's `execute` function is called. They are perfect for logging, user permission checks, or modifying the message object.
-
-A middleware function receives `(sock, m, next)`. You **must** call `next()` to pass control to the next function in the chain.
-
-**Example: A middleware to block users from a specific group.**
-
-```javascript
-// in index.js
-const blockGroupMiddleware = (sock, m, next) => {
-    const blockedGroupId = '1234567890@g.us';
-    if (m.isGroup && m.chat === blockedGroupId) {
-        // Do not call next(), effectively stopping execution
-        console.log(`[BLOCK] Ignored command from blocked group ${m.chat}`);
-        return; 
-    }
-    // If not from the blocked group, continue
-    next();
-};
-
-bot.use(blockGroupMiddleware);
-```
-
 ### 🔹 Event Handlers
 
 Orion automatically handles core Baileys events. The main handlers are located in the `src/handlers/` directory.
@@ -217,12 +186,6 @@ Create a `.env` file in your project root to configure your bot.
 SESSION_NAME=mysession
 # The prefix for all commands
 PREFIX=!
-
-# --- DEVELOPMENT SETTINGS ---
-# Set to 'true' to make the bot only respond to the owner
-DEVELOPMENT_MODE=false
-# Your WhatsApp number (format: 1234567890@s.whatsapp.net)
-BOT_OWNER_JID=
 
 # --- BUILT-IN FEATURES (set to 'true' to enable) ---
 BUILTIN_COMMAND_PING_ENABLED=true
