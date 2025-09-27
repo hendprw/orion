@@ -1,14 +1,13 @@
 
-\<div align="center"\>
-\<img src="[https://i.imgur.com/your-logo.png](https://i.imgur.com/your-logo.png)" alt="Orion Logo" width="150"/\>
-\<h1\>Orion Framework\</h1\>
-\<p\>
-\<strong\>A Powerful, Modular, and Developer-Friendly WhatsApp Bot Framework.\</strong\>
-\</p\>
-\<p\>
-Built on top of \<a href="[https://github.com/WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys)"\>Baileys\</a\>, Orion provides high-level abstractions to let you focus on building amazing features, not boilerplate.
-\</p\>
-\</div\>
+<div align="center">
+<h1>Orion Framework</h1>
+<p>
+<strong>A Powerful, Modular, and Developer-Friendly WhatsApp Bot Framework.\</strong\>
+</p>
+<p>
+Built on top of <a href="[https://github.com/WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys)">Baileys\</a>, Orion provides high-level abstractions to let you focus on building amazing features, not boilerplate.
+</p>
+</div>
 
 ## ✨ Core Features
 
@@ -30,7 +29,7 @@ Start a new project and install the necessary dependencies.
 
 ```bash
 npm init -y
-npm install orion-wa dotenv
+npm install orion-wa
 ```
 
 ### 2\. Project Structure
