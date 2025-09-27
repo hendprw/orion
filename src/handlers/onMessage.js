@@ -3,9 +3,8 @@ const { parseMessage } = require('../core/messageParser');
 const logger = require('../utils/logger');
 
 /**
- * Handler utama untuk setiap pesan yang masuk.
  * @param {import('@whiskeysockets/baileys').WASocket} sock 
- * @param {object} m M-Object dari Baileys
+ * @param {object} m - M-Object dari Baileys
  * @param {CommandHandler} commandHandler
  * @param {string} prefix
  */
@@ -16,9 +15,6 @@ module.exports = async (sock, m, commandHandler, prefix) => {
         const parsedM = await parseMessage(sock, msg);
         if (!parsedM) return;
         
-        // Pengguna library bisa menambahkan middleware mereka di sini
-        // Contoh: await runMiddleware(parsedM);
-
         if (!parsedM.body || !parsedM.body.startsWith(prefix)) return;
 
         const args = parsedM.body.slice(prefix.length).trim().split(/ +/);
@@ -27,7 +23,6 @@ module.exports = async (sock, m, commandHandler, prefix) => {
         const command = commandHandler.getCommand(commandName);
         if (!command) return;
         
-        // Menambahkan args dan commandName ke objek parsedM
         parsedM.args = args;
         parsedM.command = commandName;
 
@@ -42,15 +37,35 @@ module.exports = async (sock, m, commandHandler, prefix) => {
              return await sock.reply(parsedM, 'Bot harus menjadi admin untuk menjalankan perintah ini.');
         }
 
+        // Pemeriksaan Cooldown
+        if (commandHandler.isUserOnCooldown(parsedM.sender, command)) {
+            logger.warn({
+                sender: parsedM.sender,
+                command: commandName
+            }, 'Pengguna dalam masa cooldown.');
+            return await sock.reply(parsedM, 'Mohon tunggu beberapa saat sebelum menggunakan perintah ini lagi.');
+        }
+
         logger.info({ 
             from: parsedM.sender.split('@')[0], 
             command: parsedM.command, 
             group: parsedM.isGroup ? parsedM.groupMetadata.subject : 'PM' 
         }, 'Perintah diterima');
         
-        await command.execute(sock, parsedM);
+        // Blok try-catch spesifik untuk eksekusi perintah
+        try {
+            await command.execute(sock, parsedM);
+        } catch (err) {
+            logger.error({ 
+                err, 
+                command: commandName, 
+                sender: parsedM.sender 
+            }, "Terjadi error saat eksekusi perintah");
+            await sock.reply(parsedM, 'Maaf, terjadi kesalahan saat menjalankan perintah.');
+        }
 
     } catch (err) {
+        // Blok catch ini sekarang untuk error di luar eksekusi (misal: parsing)
         logger.error({ err }, "Terjadi error pada messageHandler");
     }
 };

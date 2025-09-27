@@ -4,13 +4,50 @@ const path = require('path');
 const chokidar = require('chokidar');
 
 class CommandHandler {
-    constructor(folderPath, logger) {
+    /**
+     * @param {string} folderPath - Path ke direktori perintah.
+     * @param {object} logger - Instance logger (pino).
+     * @param {number} defaultCooldown - Waktu cooldown default dalam detik.
+     */
+    constructor(folderPath, logger, defaultCooldown) {
         this.commands = new Map();
         this.aliases = new Map();
+        this.cooldowns = new Map(); // Untuk menyimpan timestamp cooldown
         this.folderPath = folderPath ? path.resolve(folderPath) : null;
         this.logger = logger;
+        this.defaultCooldown = defaultCooldown;
     }
 
+    /**
+     * Memeriksa dan mengatur cooldown untuk pengguna dan perintah.
+     * @param {string} userId - JID pengguna.
+     * @param {object} command - Objek perintah yang akan dieksekusi.
+     * @returns {boolean} `true` jika pengguna dalam masa cooldown, `false` sebaliknya.
+     */
+    isUserOnCooldown(userId, command) {
+        const now = Date.now();
+        const cooldownAmount = (command.cooldown || this.defaultCooldown) * 1000;
+        
+        const userCooldowns = this.cooldowns.get(userId) || new Map();
+        
+        if (userCooldowns.has(command.name)) {
+            const expirationTime = userCooldowns.get(command.name) + cooldownAmount;
+            if (now < expirationTime) {
+                // Pengguna masih dalam masa cooldown
+                return true;
+            }
+        }
+        
+        // Atur cooldown baru
+        userCooldowns.set(command.name, now);
+        this.cooldowns.set(userId, userCooldowns);
+        
+        // Hapus entri cooldown setelah selesai untuk menghemat memori
+        setTimeout(() => userCooldowns.delete(command.name), cooldownAmount);
+
+        return false;
+    }
+    
     loadCommand(filePath) {
         try {
             delete require.cache[require.resolve(filePath)];

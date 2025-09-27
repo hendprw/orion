@@ -4,69 +4,68 @@ Orion adalah *framework* bot WhatsApp yang kuat, modular, dan efisien, dibangun 
 
 ## Fitur
 
--   **Modular**: Struktur berbasis perintah yang mudah diperluas.
--   **Hot Reload**: Perintah dapat di-update secara otomatis tanpa me-restart bot.
+-   **Struktur Modular**: Logika terpisah dalam file perintah yang mudah dikelola.
+-   **Hot Reload**: Perbarui perintah secara otomatis tanpa me-restart bot.
+-   **Manajemen Sesi**: Dibangun di atas `useMultiFileAuthState` untuk sesi yang andal.
+-   **Cooldown Perintah**: Fitur bawaan untuk mencegah *spamming* perintah.
 -   **Handler Kustom**: Mudah mengimplementasikan logika kustom untuk event grup.
--   **Helper Functions**: Dilengkapi dengan puluhan fungsi pembantu.
+-   **Puluhan Helper Functions**: Dilengkapi dengan fungsi pembantu untuk mengirim media, mereply, dll.
 
-## Instalasi
+## Instalasi & Setup
 
-```bash
-npm install orion-wa
-```
+1.  **Install package:**
+    ```bash
+    npm install orion-wa dotenv
+    ```
 
-## Cara Penggunaan
+2.  **Buat file `.env`** di direktori root proyek Anda untuk menyimpan konfigurasi:
+    ```env
+    # File: .env
+    SESSION_NAME=mysession
+    PREFIX=!
+    ```
 
-### Contoh: Bot dengan Fitur Welcome/Goodbye
+3.  **Struktur Proyek Anda:**
+    ```
+    my-bot/
+    ├── commands/
+    │   └── util/
+    │       └── ping.js
+    ├── data/
+    │   └── group-settings.json
+    ├── session/
+    ├── .env
+    └── index.js
+    ```
 
-**1. Struktur Proyek Anda:**
-```
-my-bot/
-├── commands/
-│   └── ping.js
-├── data/
-│   └── group-settings.json  // Contoh penyimpanan data menggunakan file JSON
-├── session/
-└── index.js
-```
+---
 
-**2. Siapkan Penyimpanan Data Anda (Contoh: `group-settings.json`):**
-```json
-{
-  "12036304...g.us": {
-    "welcome": {
-      "enabled": true,
-      "message": "Hai %%mention%%! Selamat datang di %%group%% 👋"
-    },
-    "goodbye": {
-      "enabled": false
-    }
-  }
-}
-```
+## Contoh Penggunaan Lengkap
 
-**3. Implementasikan Logika Anda di `index.js`:**
+### `index.js` (File Utama)
+
 ```javascript
 const { Bot } = require('orion-wa');
 const path = require('path');
 const fs = require('fs').promises;
 
-// Path ke file database JSON Anda
+// Path ke file database JSON
 const SETTINGS_FILE = path.join(__dirname, 'data', 'group-settings.json');
 
 /**
- * Fungsi ini akan mengambil data dari file JSON.
+ * Mengambil pengaturan dari file JSON.
  * Orion akan memanggil fungsi ini setiap kali ada anggota grup berubah.
- * Anda bisa mengganti logika ini untuk membaca dari database SQL, MongoDB, dll.
+ * Anda bisa menggantinya dengan logika database (SQL, MongoDB, dll).
+ * @param {string} groupId - JID dari grup.
+ * @returns {Promise<object|null>}
  */
 async function fetchGroupSettings(groupId) {
     try {
         const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
         const allSettings = JSON.parse(data);
-        return allSettings[groupId] || null; // Kembalikan pengaturan untuk grup spesifik
+        return allSettings[groupId] || null;
     } catch (error) {
-        // Jika file tidak ada, kembalikan null
-        if (error.code === 'ENOENT') return null; 
+        if (error.code === 'ENOENT') return null;
         console.error("Gagal membaca file pengaturan:", error);
         return null;
     }
@@ -74,14 +73,11 @@ async function fetchGroupSettings(groupId) {
 
 // Konfigurasi Bot Orion
 const bot = new Bot({
-    sessionName: 'session',
-    prefix: '!',
+    // sessionName & prefix diambil dari .env, bisa di-override di sini
     commandsPath: path.join(__dirname, 'commands'),
-    getGroupSettings: fetchGroupSettings // "Suntikkan" fungsi Anda ke bot
+    getGroupSettings: fetchGroupSettings,
+    defaultCommandCooldown: 5 // Cooldown default 5 detik untuk semua perintah
 });
 
 // Jalankan bot
 bot.connect();
-```
-
-Dengan pendekatan ini, *framework* **Orion** Anda menjadi jauh lebih profesional, fleksibel, dan menarik bagi audiens developer yang lebih luas.

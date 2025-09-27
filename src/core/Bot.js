@@ -1,9 +1,12 @@
 // orion/src/core/Bot.js
+require('dotenv').config(); // Memuat variabel dari file .env
+
 const makeWASocket = require('@whiskeysockets/baileys').default;
 const { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore, DisconnectReason } = require('@whiskeysockets/baileys');
 const NodeCache = require('node-cache');
 const pino = require('pino');
 const { Boom } = require('@hapi/boom');
+const fs = require('fs');
 
 const CommandHandler = require('./commandHandler');
 const onConnectionUpdate = require('../handlers/onConnectionUpdate');
@@ -17,35 +20,47 @@ const msgRetryCounterCache = new NodeCache();
 
 /**
  * Kelas utama Orion Bot Framework.
- * Mengelola koneksi, handler, dan semua fungsionalitas inti.
  */
 class Bot {
     /**
      * @param {object} config - Konfigurasi untuk instance bot.
      * @param {string} [config.sessionName='session'] - Nama folder untuk menyimpan file sesi.
-     * @param {string} [config.prefix='!'] - Prefix yang digunakan untuk mendeteksi perintah.
-     * @param {string} [config.commandsPath] - Path absolut ke direktori yang berisi file-file perintah Anda.
-     * @param {Function} [config.getGroupSettings] - Fungsi async (groupId) => Promise<Object|null> untuk mengambil pengaturan grup dari sumber data Anda (DB, file JSON, dll).
+     * @param {string} [config.prefix='!'] - Prefix untuk mendeteksi perintah.
+     * @param {string} [config.commandsPath] - Path absolut ke direktori perintah.
+     * @param {Function} [config.getGroupSettings] - Fungsi async untuk mengambil pengaturan grup.
+     * @param {number} [config.defaultCommandCooldown=3] - Waktu jeda (cooldown) default per perintah dalam detik.
      */
     constructor(config = {}) {
         this.config = {
-            sessionName: 'session',
-            prefix: '!',
+            sessionName: process.env.SESSION_NAME || 'session',
+            prefix: process.env.PREFIX || '!',
             commandsPath: null,
-            getGroupSettings: async (groupId) => null, // Fungsi default yang tidak melakukan apa-apa
+            getGroupSettings: async (groupId) => null,
+            defaultCommandCooldown: 3, // Cooldown default 3 detik
             ...config,
         };
-        this.sock = null;
-        this.commandHandler = new CommandHandler(this.config.commandsPath, logger);
-        this.logger = logger;
 
-        // Binding `this` untuk memastikan konteks yang benar saat rekoneksi
+        this.validateConfig(); // Validasi konfigurasi
+
+        this.sock = null;
+        this.commandHandler = new CommandHandler(this.config.commandsPath, logger, this.config.defaultCommandCooldown);
+        this.logger = logger;
         this.connect = this.connect.bind(this);
     }
 
     /**
+     * Memvalidasi konfigurasi yang diberikan.
+     * @private
+     */
+    validateConfig() {
+        if (this.config.commandsPath && !fs.existsSync(this.config.commandsPath)) {
+            this.logger.error(`Direktori perintah tidak ditemukan: ${this.config.commandsPath}`);
+            process.exit(1);
+        }
+    }
+
+    /**
      * Menginisialisasi koneksi bot ke WhatsApp.
-     * Metode ini akan membuat instance socket, memuat perintah, dan mendaftarkan semua event handler.
      */
     async connect() {
         try {
@@ -64,42 +79,36 @@ class Bot {
                 browser: ['Orion Framework', 'Chrome', '1.0.0'],
                 msgRetryCounterCache,
                 printQRInTerminal: true,
-                // Meng-cache metadata grup untuk performa yang lebih baik
                 cachedGroupMetadata: (jid) => {
-                    const cache = new NodeCache({ stdTTL: 3600, useClones: false }); // Cache selama 1 jam
+                    const cache = new NodeCache({ stdTTL: 3600, useClones: false });
                     return cache.get(jid);
                 }
             });
-            
-            // "Suntikkan" fungsi-fungsi helper ke dalam instance socket
+
             enhanceSocketWithHelpers(this.sock);
 
-            // Muat atau muat ulang semua perintah jika path disediakan
             if (this.config.commandsPath) {
                 this.commandHandler.loadAllCommands();
-                this.commandHandler.watchCommands(); // Aktifkan hot-reloading
+                this.commandHandler.watchCommands();
             }
 
-            // Daftarkan semua event handler dari Baileys
             this.registerHandlers(saveCreds);
             
             return this.sock;
         } catch (error) {
             this.logger.error({ err: error }, "Gagal memulai koneksi bot.");
-            process.exit(1); // Keluar jika terjadi error fatal saat startup
+            process.exit(1);
         }
     }
 
     /**
-     * Mendaftarkan semua event handler Baileys ke instance socket.
+     * Mendaftarkan semua event handler Baileys.
      * @private
      * @param {Function} saveCreds - Fungsi untuk menyimpan kredensial sesi.
      */
     registerHandlers(saveCreds) {
-        // Buat handler grup dengan fungsi kustom yang disediakan pengguna
         const onGroupUpdate = createGroupUpdateHandler(this.config.getGroupSettings);
 
-        // Handler untuk setiap event
         this.sock.ev.on('creds.update', onCredsUpdate(saveCreds));
         this.sock.ev.on('connection.update', (update) => onConnectionUpdate(update, this.connect));
         this.sock.ev.on('messages.upsert', (m) => onMessage(this.sock, m, this.commandHandler, this.config.prefix));
