@@ -5,17 +5,17 @@ const chokidar = require('chokidar');
 
 class CommandHandler {
     /**
-     * @param {string} folderPath - Path ke direktori perintah.
+     * @param {string} folderPath - Path ke direktori perintah pengguna.
      * @param {object} logger - Instance logger (pino).
      * @param {number} defaultCooldown - Waktu cooldown default dalam detik.
      */
     constructor(folderPath, logger, defaultCooldown) {
         this.commands = new Map();
         this.aliases = new Map();
-        this.cooldowns = new Map(); // Untuk menyimpan timestamp cooldown
+        this.cooldowns = new Map();
         this.folderPath = folderPath ? path.resolve(folderPath) : null;
         this.logger = logger;
-        this.defaultCooldown = defaultCooldown;
+        this.defaultCooldown = defaultCooldown || 3; // Default cooldown 3 detik jika tidak disediakan
     }
 
     /**
@@ -33,21 +33,22 @@ class CommandHandler {
         if (userCooldowns.has(command.name)) {
             const expirationTime = userCooldowns.get(command.name) + cooldownAmount;
             if (now < expirationTime) {
-                // Pengguna masih dalam masa cooldown
                 return true;
             }
         }
         
-        // Atur cooldown baru
         userCooldowns.set(command.name, now);
         this.cooldowns.set(userId, userCooldowns);
         
-        // Hapus entri cooldown setelah selesai untuk menghemat memori
         setTimeout(() => userCooldowns.delete(command.name), cooldownAmount);
 
         return false;
     }
-    
+
+    /**
+     * Memuat sebuah file perintah dan menyimpannya.
+     * @param {string} filePath - Path absolut ke file perintah.
+     */
     loadCommand(filePath) {
         try {
             delete require.cache[require.resolve(filePath)];
@@ -67,10 +68,14 @@ class CommandHandler {
         }
     }
 
+    /**
+     * Memuat semua perintah dari sebuah direktori secara rekursif.
+     * @param {string} dir - Path ke direktori.
+     */
     loadCommandsFromDir(dir) {
         if (!fs.existsSync(dir)) {
-             this.logger.warn(`Direktori perintah tidak ditemukan: ${dir}`);
-             return;
+            this.logger.warn(`Direktori perintah tidak ditemukan: ${dir}`);
+            return;
         }
         const files = fs.readdirSync(dir);
         for (const file of files) {
@@ -83,13 +88,45 @@ class CommandHandler {
         }
     }
 
-    loadAllCommands() {
+    /**
+     * Memuat semua perintah kustom yang disediakan oleh pengguna.
+     */
+    loadCustomCommands() {
         if (!this.folderPath) return;
-        this.logger.info('Memuat semua perintah dari direktori...');
-        this.commands.clear();
-        this.aliases.clear();
+        this.logger.info('Memuat perintah kustom dari direktori pengguna...');
         this.loadCommandsFromDir(this.folderPath);
-        this.logger.info(`Total ${this.commands.size} perintah & ${this.aliases.size} alias berhasil dimuat.`);
+    }
+
+    /**
+     * Memuat semua perintah bawaan dari direktori internal framework.
+     */
+    loadBuiltinCommands() {
+        this.logger.info('Memuat perintah bawaan...');
+        const builtinDir = path.join(__dirname, '..', 'builtin', 'commands');
+        if (!fs.existsSync(builtinDir)) {
+            this.logger.warn('Direktori perintah bawaan tidak ditemukan.');
+            return;
+        }
+
+        const files = fs.readdirSync(builtinDir).filter(file => file.endsWith('.js'));
+        let loadedCount = 0;
+
+        for (const file of files) {
+            const commandName = path.parse(file).name;
+            const envVar = `BUILTIN_COMMAND_${commandName.toUpperCase()}_ENABLED`;
+
+            if (process.env[envVar] === 'true') {
+                const filePath = path.join(builtinDir, file);
+                this.loadCommand(filePath);
+                loadedCount++;
+            }
+        }
+        
+        if (loadedCount > 0) {
+            this.logger.info(`Total ${loadedCount} perintah bawaan berhasil dimuat.`);
+        } else {
+            this.logger.info('Tidak ada perintah bawaan yang diaktifkan.');
+        }
     }
 
     watchCommands() {
@@ -103,8 +140,11 @@ class CommandHandler {
 
         watcher
             .on('change', filePath => {
-                this.logger.info(`Perubahan pada '${path.basename(filePath)}', memuat ulang...`);
-                this.loadCommand(filePath);
+                this.logger.info(`Perubahan pada '${path.basename(filePath)}', memuat ulang semua perintah...`);
+                this.commands.clear();
+                this.aliases.clear();
+                this.loadBuiltinCommands();
+                this.loadCustomCommands();
             })
             .on('add', filePath => {
                 this.logger.info(`File baru '${path.basename(filePath)}' terdeteksi, memuat...`);

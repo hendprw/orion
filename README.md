@@ -81,3 +81,31 @@ const bot = new Bot({
 
 // Jalankan bot
 bot.connect();
+
+## Fitur Bawaan (Built-in)
+
+Orion dilengkapi dengan beberapa fitur bawaan yang dapat diaktifkan melalui file `.env`. Ini memungkinkan Anda untuk memiliki fungsionalitas dasar tanpa perlu membuat perintah dari nol.
+
+### Konfigurasi
+
+Salin isi dari `.env.example` ke file baru bernama `.env` dan atur nilainya ke `true` untuk fitur yang ingin Anda aktifkan.
+
+### Daftar Fitur Bawaan
+
+**Perintah:**
+-   **ping**: Mengecek latensi bot.
+    -   `.env`: `BUILTIN_COMMAND_PING_ENABLED=true`
+-   **add**: Menambahkan anggota ke grup (memerlukan admin).
+    -   `.env`: `BUILTIN_COMMAND_ADD_ENABLED=true`
+-   **remove/kick**: Mengeluarkan anggota dari grup (memerlukan admin).
+    -   `.env`: `BUILTIN_COMMAND_REMOVE_ENABLED=true`
+
+**Event Grup:**
+-   **Welcomer**: Mengirim pesan selamat datang saat anggota baru bergabung.
+    -   `.env`: `BUILTIN_WELCOMER_ENABLED=true`
+    -   Kustomisasi pesan: `BUILTIN_WELCOMER_MESSAGE="Teks Anda di sini"`
+-   **Goodbye**: Mengirim pesan selamat tinggal saat anggota keluar.
+    -   `.env`: `BUILTIN_GOODBYE_ENABLED=true`
+    -   Kustomisasi pesan: `BUILTIN_GOODBYE_MESSAGE="Teks Anda di sini"`
+
+**Catatan**: Fitur event grup bawaan ini berjalan *bersamaan* dengan fitur `getGroupSettings` kustom Anda. Anda bisa menggunakan keduanya atau salah satunya.
