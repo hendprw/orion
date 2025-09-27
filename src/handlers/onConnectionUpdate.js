@@ -2,6 +2,7 @@
 const { DisconnectReason } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
 const logger = require('../utils/logger');
+const qrcode = require('qrcode-terminal'); // <-- Tambahkan ini
 
 /**
  * Menangani update koneksi.
@@ -9,7 +10,15 @@ const logger = require('../utils/logger');
  * @param {Function} connectFn Fungsi untuk menjalankan koneksi ulang.
  */
 module.exports = (update, connectFn) => {
-    const { connection, lastDisconnect } = update;
+    const { connection, lastDisconnect, qr } = update; // <-- Tambahkan 'qr'
+
+    // === AWAL BLOK BARU ===
+    // Logika untuk menampilkan QR code di terminal
+    if (qr) {
+        logger.info('QR Code diterima, silakan scan:');
+        qrcode.generate(qr, { small: true });
+    }
+    // === AKHIR BLOK BARU ===
 
     if (connection === 'close') {
         const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;

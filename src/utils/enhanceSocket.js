@@ -28,9 +28,10 @@ const enhanceSocketWithHelpers = (sock) => {
      * @param {string} text - Teks balasan.
      * @param {object} [options={}] - Opsi tambahan dari Baileys.
      */
-    sock.reply = async (m, text, options = {}) => {
-        await sock.sendMessage(m.chat, { text }, { quoted: m.msg, ...options });
-    };
+   sock.reply = async (m, text, options = {}) => {
+    // Tambahkan 'return' di sini
+    return await sock.sendMessage(m.chat, { text }, { quoted: m.msg, ...options });
+};
 
     /**
      * Mengirim pesan teks ke sebuah JID.
