@@ -3,9 +3,10 @@ const { parseMessage } = require('../core/messageParser');
 const logger = require('../utils/logger');
 
 /**
+ * Handler utama untuk setiap pesan yang masuk.
  * @param {import('@whiskeysockets/baileys').WASocket} sock 
  * @param {object} m - M-Object dari Baileys
- * @param {CommandHandler} commandHandler
+ * @param {import('../core/commandHandler')} commandHandler
  * @param {string} prefix
  */
 module.exports = async (sock, m, commandHandler, prefix) => {
@@ -37,13 +38,12 @@ module.exports = async (sock, m, commandHandler, prefix) => {
              return await sock.reply(parsedM, 'Bot harus menjadi admin untuk menjalankan perintah ini.');
         }
 
-        // Pemeriksaan Cooldown
         if (commandHandler.isUserOnCooldown(parsedM.sender, command)) {
             logger.warn({
                 sender: parsedM.sender,
                 command: commandName
-            }, 'Pengguna dalam masa cooldown.');
-            return await sock.reply(parsedM, 'Mohon tunggu beberapa saat sebelum menggunakan perintah ini lagi.');
+            }, 'Pengguna dalam masa cooldown, perintah diabaikan.');
+            return;
         }
 
         logger.info({ 
@@ -52,9 +52,11 @@ module.exports = async (sock, m, commandHandler, prefix) => {
             group: parsedM.isGroup ? parsedM.groupMetadata.subject : 'PM' 
         }, 'Perintah diterima');
         
-        // Blok try-catch spesifik untuk eksekusi perintah
         try {
-            await command.execute(sock, parsedM);
+            // --- PERBAIKAN DI SINI ---
+            // Sekarang meneruskan 'logger' sebagai argumen ketiga ke setiap perintah
+            await command.execute(sock, parsedM, logger);
+
         } catch (err) {
             logger.error({ 
                 err, 
@@ -65,7 +67,6 @@ module.exports = async (sock, m, commandHandler, prefix) => {
         }
 
     } catch (err) {
-        // Blok catch ini sekarang untuk error di luar eksekusi (misal: parsing)
         logger.error({ err }, "Terjadi error pada messageHandler");
     }
 };
