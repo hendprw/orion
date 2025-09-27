@@ -123,23 +123,7 @@ Setiap perintah dan *middleware* menerima objek `m` yang sudah di-*parse* dan ka
 | `isBotAdmin` | `boolean` | `true` jika bot adalah admin di grup tersebut. |
 
 ### 🔹 Penanganan Event Grup
-
-Orion menangani anggota yang bergabung atau keluar grup melalui **fitur bawaan** yang dikontrol sepenuhnya dari file `.env` Anda. Ini adalah cara yang cepat dan mudah untuk mengaktifkan pesan selamat datang dan selamat tinggal.
-
-Cukup atur variabel berikut di file `.env` Anda:
-
-```env
-# Aktifkan atau nonaktifkan fitur welcomer
-BUILTIN_WELCOMER_ENABLED=true
-# Kustomisasi pesan (%%mention%% dan %%group%% adalah placeholder)
-BUILTIN_WELCOMER_MESSAGE="Selamat datang %%mention%% di %%group%%!"
-
-# Aktifkan atau nonaktifkan fitur goodbye
-BUILTIN_GOODBYE_ENABLED=true
-BUILTIN_GOODBYE_MESSAGE="Selamat jalan %%mention%%..."
-```
-
------
+----
 
 ## ⚙️ Konfigurasi (`.env`)
 
