@@ -4,111 +4,84 @@ Orion adalah *framework* bot WhatsApp yang kuat, modular, dan efisien, dibangun 
 
 ## Fitur
 
-- **Modern & Cepat**: Dibangun dengan Baileys terbaru.
-- **Modular**: Struktur berbasis perintah yang mudah diperluas.
-- **Hot Reload**: Perintah dapat di-update secara otomatis tanpa me-restart bot.
-- **Handler Kustom**: Mudah mengimplementasikan logika kustom untuk event grup.
-- **Helper Functions**: Dilengkapi dengan puluhan fungsi pembantu untuk mengirim berbagai jenis pesan.
-- **Parsing Pesan Otomatis**: Pesan masuk di-parsing menjadi objek yang mudah dikelola.
+-   **Modular**: Struktur berbasis perintah yang mudah diperluas.
+-   **Hot Reload**: Perintah dapat di-update secara otomatis tanpa me-restart bot.
+-   **Handler Kustom**: Mudah mengimplementasikan logika kustom untuk event grup.
+-   **Helper Functions**: Dilengkapi dengan puluhan fungsi pembantu.
 
 ## Instalasi
 
 ```bash
-npm install orion-wa mongoose
+npm install orion-wa
 ```
 
 ## Cara Penggunaan
 
-### Contoh 1: Bot Perintah Sederhana
+### Contoh: Bot dengan Fitur Welcome/Goodbye
 
-**1. Struktur Folder:**
+**1. Struktur Proyek Anda:**
 ```
 my-bot/
 ├── commands/
 │   └── ping.js
+├── data/
+│   └── group-settings.json  // Contoh penyimpanan data menggunakan file JSON
 ├── session/
 └── index.js
 ```
 
-**2. Perintah `ping.js`:**
-```javascript
-module.exports = {
-    name: 'ping',
-    execute: async (sock, m) => {
-        await sock.reply(m, 'Pong!');
-    }
-};
-```
-
-**3. File Utama `index.js`:**
-```javascript
-const { Bot } = require('orion-wa');
-const path = require('path');
-
-const bot = new Bot({
-    sessionName: 'session',
-    prefix: '!',
-    commandsPath: path.join(__dirname, 'commands')
-});
-
-bot.connect();
-```
-
----
-
-### Contoh 2: Menggunakan Handler Grup (Welcome/Goodbye)
-
-**1. Buat Model Database (Contoh dengan Mongoose):**
-```javascript
-// models/Group.js
-const mongoose = require('mongoose');
-
-const groupSchema = new mongoose.Schema({
-    groupId: { type: String, required: true, unique: true },
-    welcome: {
-        enabled: { type: Boolean, default: false },
-        message: { type: String, default: 'Selamat datang %%mention%% di grup %%group%%!' }
+**2. Siapkan Penyimpanan Data Anda (Contoh: `group-settings.json`):**
+```json
+{
+  "12036304...g.us": {
+    "welcome": {
+      "enabled": true,
+      "message": "Hai %%mention%%! Selamat datang di %%group%% 👋"
     },
-    goodbye: {
-        enabled: { type: Boolean, default: false },
-        message: { type: String, default: 'Selamat tinggal %%mention%%!' }
+    "goodbye": {
+      "enabled": false
     }
-});
-
-module.exports = mongoose.model('Group', groupSchema);
+  }
+}
 ```
 
-**2. Implementasikan di `index.js`:**
+**3. Implementasikan Logika Anda di `index.js`:**
 ```javascript
 const { Bot } = require('orion-wa');
 const path = require('path');
-const mongoose = require('mongoose');
-const Group = require('./models/Group'); // Impor model Anda
+const fs = require('fs').promises;
 
-// Fungsi untuk mengambil data dari database
-// Orion akan memanggil fungsi ini setiap kali ada anggota grup berubah
+// Path ke file database JSON Anda
+const SETTINGS_FILE = path.join(__dirname, 'data', 'group-settings.json');
+
+/**
+ * Fungsi ini akan mengambil data dari file JSON.
+ * Orion akan memanggil fungsi ini setiap kali ada anggota grup berubah.
+ * Anda bisa mengganti logika ini untuk membaca dari database SQL, MongoDB, dll.
+ */
 async function fetchGroupSettings(groupId) {
     try {
-        const settings = await Group.findOne({ groupId }).lean();
-        return settings;
+        const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
+        const allSettings = JSON.parse(data);
+        return allSettings[groupId] || null; // Kembalikan pengaturan untuk grup spesifik
     } catch (error) {
-        console.error("Gagal mengambil pengaturan grup:", error);
+        // Jika file tidak ada, kembalikan null
+        if (error.code === 'ENOENT') return null; 
+        console.error("Gagal membaca file pengaturan:", error);
         return null;
     }
 }
 
-// Koneksi ke DB
-mongoose.connect('mongodb://localhost:27017/bot_db')
-    .then(() => console.log('Terhubung ke MongoDB'));
-
+// Konfigurasi Bot Orion
 const bot = new Bot({
     sessionName: 'session',
     prefix: '!',
     commandsPath: path.join(__dirname, 'commands'),
-    getGroupSettings: fetchGroupSettings // Suntikkan fungsi Anda ke bot
+    getGroupSettings: fetchGroupSettings // "Suntikkan" fungsi Anda ke bot
 });
 
+// Jalankan bot
 bot.connect();
 ```
 
-Dengan cara ini, logic welcome/goodbye berada di dalam library, tetapi **sumber datanya (database) sepenuhnya dikontrol oleh Anda**. Ini adalah pendekatan terbaik untuk sebuah framework.
+Dengan pendekatan ini, *framework* **Orion** Anda menjadi jauh lebih profesional, fleksibel, dan menarik bagi audiens developer yang lebih luas.

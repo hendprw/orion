@@ -25,7 +25,7 @@ class Bot {
      * @param {string} [config.sessionName='session'] - Nama folder untuk menyimpan file sesi.
      * @param {string} [config.prefix='!'] - Prefix yang digunakan untuk mendeteksi perintah.
      * @param {string} [config.commandsPath] - Path absolut ke direktori yang berisi file-file perintah Anda.
-     * @param {Function} [config.getGroupSettings] - Fungsi async (groupId) => Promise<Object|null> untuk mengambil pengaturan grup dari database Anda.
+     * @param {Function} [config.getGroupSettings] - Fungsi async (groupId) => Promise<Object|null> untuk mengambil pengaturan grup dari sumber data Anda (DB, file JSON, dll).
      */
     constructor(config = {}) {
         this.config = {
