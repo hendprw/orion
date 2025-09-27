@@ -1,5 +1,6 @@
 // orion/src/handlers/onMessage.js
 const { parseMessage } = require('../core/messageParser');
+const { validateArgs } = require('../core/commandValidator'); // <-- IMPORT VALIDATOR
 const logger = require('../utils/logger');
 
 /**
@@ -9,19 +10,16 @@ const logger = require('../utils/logger');
  */
 module.exports = async (bot, m) => {
     const msg = m.messages[0];
-    // Ambil semua properti yang dibutuhkan dari instance bot
     const { sock, commandHandler, prefix, middlewares } = bot; 
 
     try {
         const parsedM = await parseMessage(sock, msg);
         if (!parsedM) return;
         
-        // --- FITUR BARU: DEVELOPMENT MODE ---
         const isDevMode = process.env.DEVELOPMENT_MODE === 'true';
-        const ownerJid = process.env.BOT_OWNER;
+        const ownerJid = process.env.BOT_OWNER_JID; // <-- PASTIKAN NAMA VARIABEL .ENV SESUAI
 
         if (isDevMode && parsedM.sender !== ownerJid) {
-            // Jika mode dev aktif dan pengirim bukan owner, abaikan pesan.
             logger.warn(`Pesan dari ${parsedM.sender.split('@')[0]} diabaikan (Development Mode).`);
             return;
         }
@@ -34,8 +32,16 @@ module.exports = async (bot, m) => {
         const command = commandHandler.getCommand(commandName);
         if (!command) return;
         
+        // --- BLOK VALIDASI BARU & LENGKAP ---
         parsedM.args = args;
         parsedM.command = commandName;
+
+        const validationResult = validateArgs(command, parsedM);
+        if (!validationResult.isValid) {
+            // Jika validasi gagal, kirim pesan balasan dan hentikan eksekusi.
+            return await sock.reply(parsedM, validationResult.reply);
+        }
+        // --- AKHIR BLOK VALIDASI ---
 
         // Gerbang (Guard Clauses)
         if (command.isGroupOnly && !parsedM.isGroup) {
@@ -48,6 +54,9 @@ module.exports = async (bot, m) => {
              return await sock.reply(parsedM, 'Bot harus menjadi admin untuk menjalankan perintah ini.');
         }
 
+        // ... (sisa kode: cooldown, logger, middleware, execute)
+        // Tidak ada perubahan dari sini ke bawah
+        
         if (commandHandler.isUserOnCooldown(parsedM.sender, command)) {
             logger.warn({
                 sender: parsedM.sender,
@@ -62,24 +71,19 @@ module.exports = async (bot, m) => {
             group: parsedM.isGroup ? (await sock.groupMetadata(parsedM.chat)).subject : 'PM' 
         }, 'Perintah diterima');
         
-        // --- LOGIKA MIDDLEWARE ---
         let middlewareIndex = 0;
         const next = async () => {
             if (middlewareIndex < middlewares.length) {
                 const currentMiddleware = middlewares[middlewareIndex];
                 middlewareIndex++;
-                // Panggil middleware berikutnya dalam rantai
                 await currentMiddleware(sock, parsedM, next);
             } else {
-                // Jika semua middleware selesai, jalankan perintah
                 await command.execute(sock, parsedM, commandHandler);
             }
         };
 
         try {
-            // Mulai rantai eksekusi dari middleware pertama
             await next();
-
         } catch (err) {
             logger.error({ 
                 err, 
