@@ -1,111 +1,183 @@
-# Orion Framework
 
-Orion adalah *framework* bot WhatsApp yang kuat, modular, dan efisien, dibangun di atas Baileys. Didesain untuk kemudahan penggunaan dan skalabilitas, memungkinkan Anda membangun bot WhatsApp kompleks dengan cepat.
+<div align="center">
+  <img src="https://i.imgur.com/your-logo.png" alt="Orion Logo" width="150"/>
+  <h1>Orion Framework</h1>
+  <p>
+    <strong>Framework Bot WhatsApp yang Kuat, Modular, dan Developer-Friendly.</strong>
+  </p>
+  <p>
+    Dibangun di atas Baileys untuk memberikan performa tinggi dan stabilitas, dengan abstraksi tingkat tinggi agar Anda bisa fokus membangun fitur-fitur luar biasa.
+  </p>
+</div>
 
-## Fitur
+## ✨ Fitur Utama
 
--   **Struktur Modular**: Logika terpisah dalam file perintah yang mudah dikelola.
--   **Hot Reload**: Perbarui perintah secara otomatis tanpa me-restart bot.
--   **Manajemen Sesi**: Dibangun di atas `useMultiFileAuthState` untuk sesi yang andal.
--   **Cooldown Perintah**: Fitur bawaan untuk mencegah *spamming* perintah.
--   **Handler Kustom**: Mudah mengimplementasikan logika kustom untuk event grup.
--   **Puluhan Helper Functions**: Dilengkapi dengan fungsi pembantu untuk mengirim media, mereply, dll.
+Orion dirancang dengan serangkaian fitur canggih untuk mempercepat dan menyederhanakan proses pengembangan bot Anda:
 
-## Instalasi & Setup
-
-1.  **Install package:**
-    ```bash
-    npm install orion-wa dotenv
-    ```
-
-2.  **Buat file `.env`** di direktori root proyek Anda untuk menyimpan konfigurasi:
-    ```env
-    # File: .env
-    SESSION_NAME=mysession
-    PREFIX=!
-    ```
-
-3.  **Struktur Proyek Anda:**
-    ```
-    my-bot/
-    ├── commands/
-    │   └── util/
-    │       └── ping.js
-    ├── data/
-    │   └── group-settings.json
-    ├── session/
-    ├── .env
-    └── index.js
-    ```
+* ⚡️ **Struktur Perintah Modular**: Organisasikan perintah Anda dalam file-file terpisah yang bersih dan mudah dikelola.
+* 🔄 **Hot Reloading**: Perbarui, tambah, atau hapus perintah secara *real-time* tanpa perlu me-restart bot.
+* 🛡️ **Sistem Middleware**: Cegat dan proses data sebelum perintah dieksekusi untuk *logging*, validasi, atau modifikasi.
+* 🛠️ **Puluhan Fungsi Helper**: Objek `sock` diperkaya dengan fungsi-fungsi praktis seperti `sock.reply`, `sock.sendImage`, `sock.downloadMedia`, dan banyak lagi.
+* ⏱️ **Manajemen Cooldown**: Cegah *spamming* dengan fitur *cooldown* bawaan yang dapat dikonfigurasi per perintah atau secara global.
+* ⚙️ **Mode Pengembangan**: Isolasi bot agar hanya merespons *owner* saat Anda sedang melakukan *coding* atau *debugging*.
+* 📦 **Fitur Bawaan Siap Pakai**: Aktifkan perintah umum (`ping`, `help`) dan *event* grup (welcomer, goodbye) dengan mudah melalui file `.env`.
 
 ---
-## Fitur Bawaan (Built-in)
 
-Orion dilengkapi dengan beberapa fitur bawaan yang dapat diaktifkan melalui file `.env`. Ini memungkinkan Anda untuk memiliki fungsionalitas dasar tanpa perlu membuat perintah dari nol.
+## 🚀 Instalasi & Setup Cepat
 
-### Konfigurasi
+### 1. Instalasi
+Mulailah proyek baru dan instal dependensi yang diperlukan.
 
-Salin isi dari `.env.example` ke file baru bernama `.env` dan atur nilainya ke `true` untuk fitur yang ingin Anda aktifkan.
+```bash
+npm init -y
+npm install orion-wa dotenv
+````
 
-### Daftar Fitur Bawaan
+### 2\. Struktur Proyek
 
-**Perintah:**
--   **ping**: Mengecek latensi bot.
-    -   `.env`: `BUILTIN_COMMAND_PING_ENABLED=true`
--   **add**: Menambahkan anggota ke grup (memerlukan admin).
-    -   `.env`: `BUILTIN_COMMAND_ADD_ENABLED=true`
--   **remove/kick**: Mengeluarkan anggota dari grup (memerlukan admin).
-    -   `.env`: `BUILTIN_COMMAND_REMOVE_ENABLED=true`
+Susun proyek Anda dengan struktur berikut untuk skalabilitas maksimal.
 
-**Event Grup:**
--   **Welcomer**: Mengirim pesan selamat datang saat anggota baru bergabung.
-    -   `.env`: `BUILTIN_WELCOMER_ENABLED=true`
-    -   Kustomisasi pesan: `BUILTIN_WELCOMER_MESSAGE="Teks Anda di sini"`
--   **Goodbye**: Mengirim pesan selamat tinggal saat anggota keluar.
-    -   `.env`: `BUILTIN_GOODBYE_ENABLED=true`
-    -   Kustomisasi pesan: `BUILTIN_GOODBYE_MESSAGE="Teks Anda di sini"`
+```
+my-bot/
+├── commands/
+│   └── utility/
+│       └── my-command.js
+├── session/
+├── .env
+└── index.js
+```
 
-**Catatan**: Fitur event grup bawaan ini berjalan *bersamaan* dengan fitur `getGroupSettings` kustom Anda. Anda bisa menggunakan keduanya atau salah satunya.
----
-## Contoh Penggunaan Lengkap
+### 3\. Quick Start: `index.js`
 
-### `index.js` (File Utama)
+Buat file `index.js` Anda. Ini adalah jantung dari bot Anda.
 
 ```javascript
+// index.js
+require('dotenv').config(); // Muat variabel lingkungan
 const { Bot } = require('orion-wa');
 const path = require('path');
-const fs = require('fs').promises;
 
-// Path ke file database JSON
-const SETTINGS_FILE = path.join(__dirname, 'data', 'group-settings.json');
-
-/**
- * Mengambil pengaturan dari file JSON.
- * Orion akan memanggil fungsi ini setiap kali ada anggota grup berubah.
- * Anda bisa menggantinya dengan logika database (SQL, MongoDB, dll).
- * @param {string} groupId - JID dari grup.
- * @returns {Promise<object|null>}
- */
-async function fetchGroupSettings(groupId) {
-    try {
-        const data = await fs.readFile(SETTINGS_FILE, 'utf-8');
-        const allSettings = JSON.parse(data);
-        return allSettings[groupId] || null;
-    } catch (error) {
-        if (error.code === 'ENOENT') return null;
-        console.error("Gagal membaca file pengaturan:", error);
-        return null;
-    }
-}
-
-// Konfigurasi Bot Orion
+// Inisialisasi Bot Orion dengan konfigurasi
 const bot = new Bot({
-    // sessionName & prefix diambil dari .env, bisa di-override di sini
+    // Tentukan path ke direktori perintah kustom Anda
     commandsPath: path.join(__dirname, 'commands'),
-    getGroupSettings: fetchGroupSettings,
-    defaultCommandCooldown: 5 // Cooldown default 5 detik untuk semua perintah
+    
+    // Atur cooldown default untuk semua perintah (dalam detik)
+    defaultCommandCooldown: 5 
 });
 
-// Jalankan bot
-bot.connect();
+// (Opsional) Gunakan sistem middleware untuk logging atau validasi
+const loggerMiddleware = (sock, m, next) => {
+    console.log(`[EXEC] Perintah '${m.command}' dari ${m.sender.split('@')[0]}`);
+    next(); // Lanjutkan ke middleware berikutnya atau eksekusi perintah
+};
+bot.use(loggerMiddleware);
 
+// Hubungkan bot ke WhatsApp
+bot.connect();
+```
+
+-----
+
+## 核心概念 (Core Concepts)
+
+Memahami konsep inti Orion adalah kunci untuk memaksimalkan potensinya.
+
+### 🔹 Objek Perintah
+
+Setiap file `.js` di dalam direktori `commands` Anda adalah sebuah modul perintah. Modul ini harus mengekspor sebuah objek dengan properti-properti berikut:
+
+| Properti | Tipe | Deskripsi |
+| :--- | :--- | :--- |
+| `name` | `string` | **Wajib.** Nama utama untuk memanggil perintah. |
+| `execute` | `function` | **Wajib.** Fungsi yang akan dieksekusi. |
+| `aliases` | `string[]` | Nama alternatif untuk perintah. |
+| `description` | `string` | Penjelasan singkat tentang fungsi perintah (digunakan oleh `!help`). |
+| `category` | `string` | Kategori untuk pengelompokan di `!help`. |
+| `cooldown` | `number` | Waktu jeda (detik) spesifik untuk perintah ini, menimpa *default*. |
+| `isGroupOnly` | `boolean` | Jika `true`, perintah hanya bisa dijalankan di grup. |
+| `isAdminOnly` | `boolean` | Jika `true`, hanya admin grup yang bisa menjalankan. |
+| `isBotAdminOnly` | `boolean` | Jika `true`, perintah hanya berjalan jika bot adalah admin. |
+| `isOwnerOnly` | `boolean` | Jika `true`, hanya *owner* yang didefinisikan di `.env` yang bisa menjalankan. |
+
+### 🔹 Objek Pesan (`m`)
+
+Setiap perintah dan *middleware* menerima objek `m` yang sudah di-*parse* dan kaya akan informasi. Ini menyederhanakan interaksi dengan pesan yang masuk.
+
+| Properti | Tipe | Deskripsi |
+| :--- | :--- | :--- |
+| `msg` | `object` | Objek pesan mentah dari Baileys. |
+| `key` | `object` | Kunci unik dari pesan (`id`, `remoteJid`, dll.). |
+| `chat` | `string` | JID dari obrolan (grup atau pribadi). |
+| `sender` | `string` | JID dari pengirim pesan. |
+| `isGroup` | `boolean` | `true` jika pesan berasal dari grup. |
+| `body` | `string` | Isi teks lengkap dari pesan. |
+| `args` | `string[]` | Array argumen setelah perintah. |
+| `command` | `string` | Nama perintah yang dieksekusi. |
+| `isMedia` | `boolean` | `true` jika pesan berisi media (gambar, video, stiker). |
+| `isQuoted` | `boolean` | `true` jika pesan me-reply pesan lain. |
+| `quoted` | `object` | Berisi detail pesan yang di-reply (`key`, `sender`, `msg`). |
+| `groupMetadata` | `object`| Metadata grup (jika `isGroup`), berisi subjek, partisipan, dll. |
+| `isAdmin` | `boolean` | `true` jika pengirim adalah admin grup. |
+| `isBotAdmin` | `boolean` | `true` jika bot adalah admin di grup tersebut. |
+
+### 🔹 Penanganan Event Grup
+
+Orion menangani anggota yang bergabung atau keluar grup melalui **fitur bawaan** yang dikontrol sepenuhnya dari file `.env` Anda. Ini adalah cara yang cepat dan mudah untuk mengaktifkan pesan selamat datang dan selamat tinggal.
+
+Cukup atur variabel berikut di file `.env` Anda:
+
+```env
+# Aktifkan atau nonaktifkan fitur welcomer
+BUILTIN_WELCOMER_ENABLED=true
+# Kustomisasi pesan (%%mention%% dan %%group%% adalah placeholder)
+BUILTIN_WELCOMER_MESSAGE="Selamat datang %%mention%% di %%group%%!"
+
+# Aktifkan atau nonaktifkan fitur goodbye
+BUILTIN_GOODBYE_ENABLED=true
+BUILTIN_GOODBYE_MESSAGE="Selamat jalan %%mention%%..."
+```
+
+-----
+
+## ⚙️ Konfigurasi (`.env`)
+
+Buat file `.env` di root proyek Anda dan isi dengan konfigurasi berikut.
+
+```env
+# --- KONFIGURASI INTI ---
+SESSION_NAME=mysession
+PREFIX=!
+
+# --- PENGATURAN PENGEMBANGAN ---
+# Atur ke 'true' untuk membuat bot hanya merespon owner.
+DEVELOPMENT_MODE_ENABLED=false
+# Ganti dengan nomor WhatsApp Anda (format: 628xxxxxxxxxx@s.whatsapp.net)
+BOT_OWNER_JID=
+
+# --- FITUR BAWAAN (isi 'true' untuk mengaktifkan) ---
+BUILTIN_COMMAND_PING_ENABLED=true
+BUILTIN_COMMAND_HELP_ENABLED=true
+BUILTIN_COMMAND_ADD_ENABLED=true
+BUILTIN_COMMAND_REMOVE_ENABLED=true
+
+# --- EVENT GRUP BAWAAN ---
+BUILTIN_WELCOMER_ENABLED=true
+BUILTIN_WELCOMER_MESSAGE="Hai %%mention%%! Selamat datang di surga %%group%%. Jangan lupa baca deskripsi ya!"
+BUILTIN_GOODBYE_ENABLED=true
+BUILTIN_GOODBYE_MESSAGE="Yah, %%mention%% meninggalkan kita..."
+```
+
+-----
+
+## 🤝 Kontribusi
+
+Kami sangat terbuka untuk kontribusi\! Jika Anda ingin membantu, silakan *fork* repositori ini dan buat *pull request*. Untuk perubahan besar, mohon buka *issue* terlebih dahulu untuk mendiskusikan apa yang ingin Anda ubah.
+
+## 📜 Lisensi
+
+Proyek ini dilisensikan di bawah Lisensi MIT.
+
+```
+```

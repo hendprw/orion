@@ -4,17 +4,27 @@ const logger = require('../utils/logger');
 
 /**
  * Handler utama untuk setiap pesan yang masuk.
- * @param {import('@whiskeysockets/baileys').WASocket} sock 
+ * @param {import('../core/Bot')} bot - Instance Bot utama
  * @param {object} m - M-Object dari Baileys
- * @param {import('../core/commandHandler')} commandHandler
- * @param {string} prefix
  */
-module.exports = async (sock, m, commandHandler, prefix) => {
+module.exports = async (bot, m) => {
     const msg = m.messages[0];
+    // Ambil semua properti yang dibutuhkan dari instance bot
+    const { sock, commandHandler, prefix, middlewares } = bot; 
 
     try {
         const parsedM = await parseMessage(sock, msg);
         if (!parsedM) return;
+        
+        // --- FITUR BARU: DEVELOPMENT MODE ---
+        const isDevMode = process.env.DEVELOPMENT_MODE === 'true';
+        const ownerJid = process.env.BOT_OWNER;
+
+        if (isDevMode && parsedM.sender !== ownerJid) {
+            // Jika mode dev aktif dan pengirim bukan owner, abaikan pesan.
+            logger.warn(`Pesan dari ${parsedM.sender.split('@')[0]} diabaikan (Development Mode).`);
+            return;
+        }
         
         if (!parsedM.body || !parsedM.body.startsWith(prefix)) return;
 
@@ -34,7 +44,7 @@ module.exports = async (sock, m, commandHandler, prefix) => {
         if (command.isAdminOnly && !parsedM.isAdmin) {
              return await sock.reply(parsedM, 'Perintah ini hanya untuk admin grup.');
         }
-         if (command.isBotAdminOnly && !parsedM.isBotAdmin) {
+        if (command.isBotAdminOnly && !parsedM.isBotAdmin) {
              return await sock.reply(parsedM, 'Bot harus menjadi admin untuk menjalankan perintah ini.');
         }
 
@@ -49,13 +59,26 @@ module.exports = async (sock, m, commandHandler, prefix) => {
         logger.info({ 
             from: parsedM.sender.split('@')[0], 
             command: parsedM.command, 
-            group: parsedM.isGroup ? parsedM.groupMetadata.subject : 'PM' 
+            group: parsedM.isGroup ? (await sock.groupMetadata(parsedM.chat)).subject : 'PM' 
         }, 'Perintah diterima');
         
+        // --- LOGIKA MIDDLEWARE ---
+        let middlewareIndex = 0;
+        const next = async () => {
+            if (middlewareIndex < middlewares.length) {
+                const currentMiddleware = middlewares[middlewareIndex];
+                middlewareIndex++;
+                // Panggil middleware berikutnya dalam rantai
+                await currentMiddleware(sock, parsedM, next);
+            } else {
+                // Jika semua middleware selesai, jalankan perintah
+                await command.execute(sock, parsedM, commandHandler);
+            }
+        };
+
         try {
-            // --- PERBAIKAN DI SINI ---
-            // Sekarang meneruskan 'logger' sebagai argumen ketiga ke setiap perintah
-            await command.execute(sock, parsedM, logger);
+            // Mulai rantai eksekusi dari middleware pertama
+            await next();
 
         } catch (err) {
             logger.error({ 
