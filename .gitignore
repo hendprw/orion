@@ -1,0 +1,27 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+
+# Session files
+session/
+*.json
+
+# Environment variables
+.env
+
+# Build outputs
+dist
+build
+
+# Lainnya
+.DS_Store
