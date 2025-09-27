@@ -1,8 +1,10 @@
 // orion/src/core/Bot.js
 const makeWASocket = require('@whiskeysockets/baileys').default;
+const pkg = require('../../package.json');
 const { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = require('@whiskeysockets/baileys');
 const NodeCache = require('node-cache');
 const pino = require('pino');
+const chalk = require('chalk');
 
 const CommandHandler = require('./commandHandler');
 const onConnectionUpdate = require('../handlers/onConnectionUpdate');
@@ -17,7 +19,6 @@ const msgRetryCounterCache = new NodeCache();
 
 class Bot {
     constructor(config = {}) {
-        // Penting: Pastikan dotenv.config() sudah dipanggil di file utama SEBELUM membuat instance Bot
         this.config = {
             sessionName: process.env.SESSION_NAME || 'session',
             prefix: process.env.PREFIX || '!',
@@ -27,7 +28,6 @@ class Bot {
             ...config,
         };
         this.sock = null;
-        // Sekarang meneruskan defaultCooldown ke constructor CommandHandler
         this.commandHandler = new CommandHandler(
             this.config.commandsPath, 
             logger, 
@@ -38,27 +38,41 @@ class Bot {
     }
 
     async connect() {
-        try {
-            const { state, saveCreds } = await useMultiFileAuthState(this.config.sessionName);
-            const { version } = await fetchLatestBaileysVersion();
+    try {
+        const { state, saveCreds } = await useMultiFileAuthState(this.config.sessionName);
+        const { version } = await fetchLatestBaileysVersion();
 
-            this.logger.info(`Menggunakan Baileys v${version.join('.')}`);
+        // Banner ASCII ORION
+        console.log(chalk.cyanBright(`
+    ______     _______    __      ______    _____  ___   
+   /    " \\   /"      \\  |" \\    /    " \\  (\\\"   \\|"  \\  
+  // ____  \\ |:        | ||  |  // ____  \\ |.\\\\   \\    | 
+ /  /    ) :)|_____/   ) |:  | /  /    ) :)|: \\.   \\\\  | 
+(: (____/ //  //      /  |.  |(: (____/ // |.  \\    \\. | 
+ \\        /  |:  __   \\  /\\  |\\\\        /  |    \\    \\ | 
+  \\\"_____/   |__|  \\___)(__\\_|_)\\\"_____/    \\___|\\____\\) 
+        `));
 
-            this.sock = makeWASocket({
-                version,
-                logger: pino({ level: 'silent' }),
-                auth: {
-                    creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(state.keys, this.logger),
-                },
-                browser: ['Orion Framework', 'Chrome', '1.0.0'],
-                msgRetryCounterCache,
-                printQRInTerminal: true,
-                cachedGroupMetadata: (jid) => {
-                    const cache = new NodeCache({ stdTTL: 3600, useClones: false });
-                    return cache.get(jid);
-                }
-            });
+        // Info versi
+        console.log(
+            chalk.greenBright(`🚀 Orion WhatsApp Framework v${pkg.version}`)
+        );
+
+        // Separator
+        console.log(chalk.gray('='.repeat(60)));
+
+        this.sock = makeWASocket({
+            version,
+            logger: pino({ level: 'silent' }),
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, this.logger),
+            },
+            browser: ['Orion Framework', 'Chrome', pkg.version],
+            msgRetryCounterCache,
+            printQRInTerminal: false,
+        });
+
             
             enhanceSocketWithHelpers(this.sock);
 

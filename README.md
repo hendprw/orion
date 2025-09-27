@@ -1,13 +1,16 @@
 
 <div align="center">
-<h1>Orion Framework</h1>
-<p>
-<strong>A Powerful, Modular, and Developer-Friendly WhatsApp Bot Framework.\</strong\>
-</p>
-<p>
-Built on top of <a href="[https://github.com/WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys)">Baileys\</a>, Orion provides high-level abstractions to let you focus on building amazing features, not boilerplate.
-</p>
+  <img src="https://sdmntpraustraliaeast.oaiusercontent.com/files/00000000-91b8-61fa-8123-6a9f7e64526f/raw?se=2025-09-27T15%3A38%3A19Z&sp=r&sv=2024-08-04&sr=b&scid=02a82f96-d467-5e53-b8d6-f939d34123b1&skoid=8cb40e9f-389f-4cf6-afaa-e5bd4c7fd98c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-09-26T17%3A00%3A24Z&ske=2025-09-27T17%3A00%3A24Z&sks=b&skv=2024-08-04&sig=uI2sKdAxpE/tkOVRfNUlY6xL/cqcTPn2l21CKOYEVxs%3D" alt="Orion Logo" width="200"/>
+
+  <h1>Orion Framework</h1>
+  <p>
+    <strong>A Powerful, Modular, and Developer-Friendly WhatsApp Bot Framework.</strong>
+  </p>
+  <p>
+    Built on top of <a href="https://github.com/WhiskeySockets/Baileys">Baileys</a>, Orion provides high-level abstractions to let you focus on building amazing features, not boilerplate.
+  </p>
 </div>
+
 
 ## ✨ Core Features
 

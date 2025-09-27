@@ -2,13 +2,6 @@
 const { parseMessage } = require('../core/messageParser');
 const logger = require('../utils/logger');
 
-/**
- * Handler utama untuk setiap pesan yang masuk.
- * @param {import('@whiskeysockets/baileys').WASocket} sock 
- * @param {object} m - M-Object dari Baileys
- * @param {import('../core/commandHandler')} commandHandler
- * @param {string} prefix
- */
 module.exports = async (sock, m, commandHandler, prefix) => {
     const msg = m.messages[0];
 
@@ -27,46 +20,42 @@ module.exports = async (sock, m, commandHandler, prefix) => {
         parsedM.args = args;
         parsedM.command = commandName;
 
-        // Gerbang (Guard Clauses)
+        // Guard Clauses
         if (command.isGroupOnly && !parsedM.isGroup) {
             return await sock.reply(parsedM, 'Perintah ini hanya bisa digunakan di dalam grup.');
         }
         if (command.isAdminOnly && !parsedM.isAdmin) {
-             return await sock.reply(parsedM, 'Perintah ini hanya untuk admin grup.');
+            return await sock.reply(parsedM, 'Perintah ini hanya untuk admin grup.');
         }
-         if (command.isBotAdminOnly && !parsedM.isBotAdmin) {
-             return await sock.reply(parsedM, 'Bot harus menjadi admin untuk menjalankan perintah ini.');
-        }
-
-        if (commandHandler.isUserOnCooldown(parsedM.sender, command)) {
-            logger.warn({
-                sender: parsedM.sender,
-                command: commandName
-            }, 'Pengguna dalam masa cooldown, perintah diabaikan.');
-            return;
+        if (command.isBotAdminOnly && !parsedM.isBotAdmin) {
+            return await sock.reply(parsedM, 'Bot harus menjadi admin untuk menjalankan perintah ini.');
         }
 
-        logger.info({ 
-            from: parsedM.sender.split('@')[0], 
-            command: parsedM.command, 
-            group: parsedM.isGroup ? parsedM.groupMetadata.subject : 'PM' 
-        }, 'Perintah diterima');
-        
+        // if (commandHandler.isUserOnCooldown(parsedM.sender, command)) {
+        //     logger.warn("Pengguna dalam masa cooldown, perintah diabaikan.", {
+        //         sender: parsedM.sender,
+        //         command: commandName
+        //     });
+        //     return;
+        // }
+
+      logger.info(
+  `CMD "${parsedM.command}" dari ${parsedM.sender.split('@')[0]} (${parsedM.isGroup ? parsedM.groupMetadata.subject : 'PM'})`
+);
+
         try {
-            // --- PERBAIKAN DI SINI ---
-            // Sekarang meneruskan 'logger' sebagai argumen ketiga ke setiap perintah
             await command.execute(sock, parsedM, logger);
 
         } catch (err) {
-            logger.error({ 
-                err, 
+            logger.error("Terjadi error saat eksekusi perintah", { 
                 command: commandName, 
-                sender: parsedM.sender 
-            }, "Terjadi error saat eksekusi perintah");
+                sender: parsedM.sender, 
+                err: err.stack || err.message 
+            });
             await sock.reply(parsedM, 'Maaf, terjadi kesalahan saat menjalankan perintah.');
         }
 
     } catch (err) {
-        logger.error({ err }, "Terjadi error pada messageHandler");
+        logger.error("Terjadi error pada messageHandler", { err: err.stack || err.message });
     }
 };

@@ -15,35 +15,35 @@ class CommandHandler {
         this.cooldowns = new Map();
         this.folderPath = folderPath ? path.resolve(folderPath) : null;
         this.logger = logger;
-        this.defaultCooldown = defaultCooldown || 3; // Default cooldown 3 detik jika tidak disediakan
+        // this.defaultCooldown = defaultCooldown || 0; // Default cooldown 3 detik jika tidak disediakan
     }
 
-    /**
-     * Memeriksa dan mengatur cooldown untuk pengguna dan perintah.
-     * @param {string} userId - JID pengguna.
-     * @param {object} command - Objek perintah yang akan dieksekusi.
-     * @returns {boolean} `true` jika pengguna dalam masa cooldown, `false` sebaliknya.
-     */
-    isUserOnCooldown(userId, command) {
-        const now = Date.now();
-        const cooldownAmount = (command.cooldown || this.defaultCooldown) * 1000;
+    // /**
+    //  * Memeriksa dan mengatur cooldown untuk pengguna dan perintah.
+    //  * @param {string} userId - JID pengguna.
+    //  * @param {object} command - Objek perintah yang akan dieksekusi.
+    //  * @returns {boolean} `true` jika pengguna dalam masa cooldown, `false` sebaliknya.
+    //  */
+    // isUserOnCooldown(userId, command) {
+    //     const now = Date.now();
+    //     const cooldownAmount = (command.cooldown || this.defaultCooldown) * 1000;
         
-        const userCooldowns = this.cooldowns.get(userId) || new Map();
+    //     const userCooldowns = this.cooldowns.get(userId) || new Map();
         
-        if (userCooldowns.has(command.name)) {
-            const expirationTime = userCooldowns.get(command.name) + cooldownAmount;
-            if (now < expirationTime) {
-                return true;
-            }
-        }
+    //     if (userCooldowns.has(command.name)) {
+    //         const expirationTime = userCooldowns.get(command.name) + cooldownAmount;
+    //         if (now < expirationTime) {
+    //             return true;
+    //         }
+    //     }
         
-        userCooldowns.set(command.name, now);
-        this.cooldowns.set(userId, userCooldowns);
+    //     userCooldowns.set(command.name, now);
+    //     this.cooldowns.set(userId, userCooldowns);
         
-        setTimeout(() => userCooldowns.delete(command.name), cooldownAmount);
+    //     setTimeout(() => userCooldowns.delete(command.name), cooldownAmount);
 
-        return false;
-    }
+    //     return false;
+    // }
 
     /**
      * Memuat sebuah file perintah dan menyimpannya.
@@ -147,7 +147,7 @@ class CommandHandler {
                 this.loadCustomCommands();
             })
             .on('add', filePath => {
-                this.logger.info(`File baru '${path.basename(filePath)}' terdeteksi, memuat...`);
+                // this.logger.info(`File baru '${path.basename(filePath)}' terdeteksi, memuat...`);
                 this.loadCommand(filePath);
             });
     }
