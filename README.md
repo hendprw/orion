@@ -1,57 +1,65 @@
-
 <div align="center">
-  <img src="https://sdmntpraustraliaeast.oaiusercontent.com/files/00000000-91b8-61fa-8123-6a9f7e64526f/raw?se=2025-09-27T15%3A38%3A19Z&sp=r&sv=2024-08-04&sr=b&scid=02a82f96-d467-5e53-b8d6-f939d34123b1&skoid=8cb40e9f-389f-4cf6-afaa-e5bd4c7fd98c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-09-26T17%3A00%3A24Z&ske=2025-09-27T17%3A00%3A24Z&sks=b&skv=2024-08-04&sig=uI2sKdAxpE/tkOVRfNUlY6xL/cqcTPn2l21CKOYEVxs%3D" alt="Orion Logo" width="200"/>
+<img src="[https://sdmntpraustraliaeast.oaiusercontent.com/files/00000000-91b8-61fa-8123-6a9f7e64526f/raw?se=2025-09-27T15%3A38%3A19Z&sp=r&sv=2024-08-04&sr=b&scid=02a82f96-d467-5e53-b8d6-f939d34123b1&skoid=8cb40e9f-389f-4cf6-afaa-e5bd4c7fd98c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-09-26T17%3A00%3A24Z&ske=2025-09-27T17%3A00%3A24Z&sks=b&skv=2024-08-04&sig=uI2sKdAxpE/tkOVRfNUlY6xL/cqcTPn2l21CKOYEVxs%3D](https://sdmntpraustraliaeast.oaiusercontent.com/files/00000000-91b8-61fa-8123-6a9f7e64526f/raw?se=2025-09-27T15%3A38%3A19Z&sp=r&sv=2024-08-04&sr=b&scid=02a82f96-d467-5e53-b8d6-f939d34123b1&skoid=8cb40e9f-389f-4cf6-afaa-e5bd4c7fd98c&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-09-26T17%3A00%3A24Z&ske=2025-09-27T17%3A00%3A24Z&sks=b&skv=2024-08-04&sig=uI2sKdAxpE/tkOVRfNUlY6xL/cqcTPn2l21CKOYEVxs%3D)" alt="Orion Logo" width="200"/>
 
-  <h1>Orion Framework</h1>
-  <p>
-    <strong>A Powerful, Modular, and Developer-Friendly WhatsApp Bot Framework.</strong>
-  </p>
-  <p>
-    Built on top of <a href="https://github.com/WhiskeySockets/Baileys">Baileys</a>, Orion provides high-level abstractions to let you focus on building amazing features, not boilerplate.
-  </p>
+<h1>Orion Framework</h1>
+<p>
+<strong>Framework Bot WhatsApp yang Kuat, Modular, dan Ramah Pengembang.</strong>
+</p>
+<p>
+Dibangun di atas <a href="[https://github.com/WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys)">Baileys</a>, Orion menyediakan abstraksi tingkat tinggi untuk memungkinkan Anda fokus membangun fitur luar biasa, bukan kode boilerplate.
+</p>
 </div>
 
+## ✨ Fitur Inti
 
-## ✨ Core Features
-
-  * ⚡️ **Modular Command System**: Organize your commands in clean, separate files for easy management.
-  * 🔄 **Hot Reloading**: Update, add, or remove commands in real-time without restarting the entire bot.
-  * 🛡️ **Middleware Architecture**: Intercept and process messages before a command is executed for logging, validation, or modification.
-  * 🛠️ **Enhanced Socket Helpers**: The `sock` object is supercharged with dozens of practical helper functions like `sock.reply`, `sock.sendImage`, `sock.downloadMedia`, and more.
-  * ⏱️ **Built-in Cooldowns**: Prevent spam with a configurable cooldown system, applicable per-command or globally.
-  * ⚙️ **Development Mode**: Isolate the bot to only respond to the owner's JID during development and debugging.
-  * 📦 **Ready-to-use Built-ins**: Easily enable common commands (`ping`, `add`, `remove`) and group events (welcomer, goodbye) directly from your `.env` file.
+  * ⚡️ **Sistem Perintah Modular**: Atur perintah Anda dalam file-file terpisah yang bersih untuk manajemen yang mudah.
+  * 🔄 **Hot Reloading**: Perbarui, tambah, atau hapus perintah secara *real-time* tanpa me-restart seluruh bot.
+  * 🛡️ **Arsitektur Middleware**: Cegat dan proses pesan sebelum perintah dieksekusi. Sempurna untuk validasi, logging, atau modifikasi. Mendukung *middleware* bawaan dan kustom.
+  * ⚙️ **Validasi Argumen Otomatis**: Definisikan aturan untuk argumen perintah (misalnya, jumlah, tipe) langsung di objek perintah untuk validasi otomatis.
+  * ⏱️ **Sistem Antrian & Rate Limiting**: Kontrol beban kerja bot dengan sistem antrian per-pengguna dan global yang dapat dikonfigurasi untuk mencegah spam dan *overload*.
+  * 🛠️ **Helper Socket yang Ditingkatkan**: Objek `sock` dilengkapi dengan puluhan fungsi pembantu praktis seperti `sock.reply`, `sock.sendImage`, `sock.downloadMedia`, dan banyak lagi.
+  * 📦 **Fitur Bawaan Siap Pakai**: Aktifkan dengan mudah perintah umum (`ping`, `add`, `remove`) dan acara grup (penyambutan, selamat tinggal) langsung dari file `.env` Anda.
 
 -----
 
-## 🚀 Installation & Quick Start
+## 🚀 Instalasi & Mulai Cepat
 
-### 1\. Installation
+### 1. Instalasi
 
-Start a new project and install the necessary dependencies.
+Mulai proyek baru dan instal dependensi yang diperlukan. Untuk pengalaman terbaik, gunakan CLI `create-orion-bot`.
+
+```bash
+npx create-orion-bot nama-bot-saya
+cd nama-bot-saya
+npm install
+```
+
+Atau, secara manual:
 
 ```bash
 npm init -y
-npm install orion-wa
+npm install orion-wa dotenv
 ```
 
-### 2\. Project Structure
+### 2. Struktur Proyek
 
-Organize your project with the following structure for maximum scalability.
+Atur proyek Anda dengan struktur berikut untuk skalabilitas maksimum.
 
 ```
 my-bot/
 ├── commands/
 │   └── utility/
 │       └── ping.js
+├── middlewares/
+│   └── checkPremium.js
 ├── session/
 ├── .env
 └── index.js
 ```
 
-### 3\. The `index.js` Entry Point
+### 3. Titik Masuk `index.js`
 
-This file is the heart of your bot.
+File ini adalah jantung dari bot Anda.
 
 ```javascript
 //index.js
@@ -59,13 +67,13 @@ require('dotenv').config();
 const { Bot } = require('orion-wa');
 const path = require('path');
 
-// Initialize the Orion Bot with your configuration
+// Inisialisasi Orion Bot dengan konfigurasi Anda
 const bot = new Bot({
-    // Path to your custom commands directory
+    // Path ke direktori perintah kustom Anda
     commandsPath: path.join(__dirname, 'commands'),
     
-    // Set a default cooldown for all commands (in seconds)
-    defaultCommandCooldown: 5 
+    // (Opsional) Path ke direktori middleware kustom Anda
+    middlewaresPath: path.join(__dirname, 'middlewares'),
 });
 
 
@@ -74,148 +82,152 @@ bot.connect();
 
 -----
 
-## 核心概念 (Core Concepts)
+## 核心概念 (Konsep Inti)
 
-Understanding Orion's core concepts is key to unlocking its full potential.
+Memahami konsep inti Orion adalah kunci untuk membuka potensi penuhnya.
 
-### 🔹 The Command Object
+### 🔹 Objek Perintah
 
-Every `.js` file inside your `commands` directory is a command module. It must export an object with the following properties:
+Setiap file `.js` di dalam direktori `commands` Anda adalah modul perintah. Ia harus mengekspor objek dengan properti berikut:
 
-| Property | Type | Description |
+| Properti | Tipe | Deskripsi |
 | :--- | :--- | :--- |
-| `name` | `string` | **Required.** The primary name to trigger the command. |
-| `execute` | `function` | **Required.** The function that runs when the command is called. It receives `(sock, m)`. |
-| `aliases` | `string[]` | Alternative names for the command. |
-| `description`| `string` | A brief explanation used by help commands. |
-| `category` | `string` | Used to group commands in help menus. |
-| `cooldown` | `number` | A command-specific cooldown in seconds, overriding the default. |
-| `isGroupOnly`| `boolean` | If `true`, the command can only be used in groups. |
-| `isAdminOnly`| `boolean` | If `true`, only group admins can execute it. |
-| `isBotAdminOnly`|`boolean` | If `true`, the command only works if the bot is a group admin. |
-| `isOwnerOnly`| `boolean` | If `true`, only the bot owner (defined in `.env`) can use it. |
-| `args` | `object` | An object defining validation rules for arguments (see Advanced Usage). |
+| `name` | `string` | **Wajib.** Nama utama untuk memicu perintah. |
+| `execute` | `function` | **Wajib.** Fungsi yang berjalan saat perintah dipanggil. Menerima `(sock, m, logger)`. |
+| `aliases` | `string[]` | Nama alternatif untuk perintah. |
+| `description`| `string` | Penjelasan singkat yang digunakan oleh perintah bantuan. |
+| `category` | `string` | Digunakan untuk mengelompokkan perintah di menu bantuan. |
+| `cooldown` | `number` | Cooldown spesifik perintah dalam detik, menimpa default. |
+| `isGroupOnly`| `boolean` | Jika `true`, perintah hanya bisa digunakan di grup. |
+| `isAdminOnly`| `boolean` | Jika `true`, hanya admin grup yang bisa menjalankannya. |
+| `isBotAdminOnly`|`boolean` | Jika `true`, perintah hanya berfungsi jika bot adalah admin grup. |
+| `isOwnerOnly`| `boolean` | Jika `true`, hanya pemilik bot (didefinisikan di `.env`) yang bisa menggunakannya. |
+| `args` | `object` | Objek yang mendefinisikan aturan validasi untuk argumen (lihat Penggunaan Lanjutan). |
+| `middlewares`| `string[]` | Array nama *middleware* kustom yang akan dijalankan sebelum perintah. |
 
-**Example Command: `commands/utility/ping.js`**
+**Contoh Perintah: `commands/utility/kick.js`**
 
 ```javascript
 module.exports = {
-    name: 'ping',
-    aliases: ['p'],
-    description: 'Checks the bot\'s response time.',
-    category: 'utility',
-    cooldown: 10, // 10-second cooldown
+    name: 'kick',
+    aliases: ['tendang'],
+    description: 'Mengeluarkan anggota dari grup.',
+    category: 'admin',
+    isGroupOnly: true,
+    isAdminOnly: true,
+    isBotAdminOnly: true,
+    // Aturan validasi untuk argumen
+    args: {
+        min: 1,
+        usage: '@mention',
+        types: ['mention']
+    },
+    // Menjalankan middleware kustom (jika ada)
+    middlewares: ['logKickAction'], 
+    
     async execute(sock, m) {
-        const startTime = Date.now();
-        await sock.reply(m, 'Pong!');
-        const endTime = Date.now();
-        await sock.editMessage(m.key, `Pong! (${endTime - startTime}ms)`);
+        const targetJid = m.mentionedJid[0] || m.quoted.sender;
+        await sock.groupParticipantsUpdate(m.chat, [targetJid], 'remove');
+        await sock.reply(m, `Berhasil mengeluarkan @${targetJid.split('@')[0]}`);
     }
 };
 ```
 
-### 🔹 The Parsed Message Object (`m`)
+### 🔹 Arsitektur Middleware
 
-Every command, middleware, and handler receives a rich, pre-parsed message object `m` for easy interaction.
+*Middleware* adalah fungsi yang berjalan di antara parsing pesan dan eksekusi perintah. Gunakan untuk validasi, *logging*, atau memodifikasi permintaan.
 
-| Property | Type | Description |
-| :--- | :--- | :--- |
-| `msg` | `object` | The raw message object from Baileys. |
-| `key` | `object` | The unique key of the message (`id`, `remoteJid`, etc.). |
-| `chat` | `string` | The JID of the chat (group or private). |
-| `sender` | `string` | The JID of the message author. |
-| `isGroup` | `boolean` | `true` if the message is from a group. |
-| `body` | `string` | The full text content of the message. |
-| `args` | `string[]` | An array of arguments that follow the command. |
-| `command` | `string` | The command name that was executed. |
-| `isMedia` | `boolean` | `true` if the message contains media (image, video, sticker). |
-| `isQuoted` | `boolean` | `true` if the message is a reply to another message. |
-| `quoted` | `object` | Contains details of the replied message (`key`, `sender`, `msg`). |
-| `groupMetadata`|`object`| Group metadata (if `isGroup`), contains subject, participants, etc. |
-| `isAdmin` | `boolean` | `true` if the sender is a group admin. |
-| `isBotAdmin` | `boolean` | `true` if the bot is an admin in the group. |
+  * **Middleware Bawaan**: Diaktifkan dengan properti boolean pada objek perintah seperti `isGroupOnly: true`.
+  * **Middleware Kustom**: Buat file di direktori `middlewares/` Anda, lalu terapkan menggunakan properti `middlewares: ['namaMiddleware']` pada perintah.
 
-### 🔹 The Enhanced Socket (`sock`) Helpers
+**Contoh Middleware Kustom: `middlewares/checkPremium.js`**
 
-The `sock` object is decorated with numerous helper methods to simplify common actions. Here are a few key examples:
-
-  * **`sock.reply(m, text, options?)`**: Replies to a message, automatically quoting it.
-    ```javascript
-    await sock.reply(m, 'This is a reply!');
-    ```
-  * **`sock.sendText(jid, text, options?)`**: Sends a simple text message.
-    ```javascript
-    await sock.sendText(m.chat, 'Hello world!');
-    ```
-  * **`sock.sendImage(jid, source, caption?, options?)`**: Sends an image from a URL or Buffer.
-    ```javascript
-    const imageUrl = 'https://example.com/image.jpg';
-    await sock.sendImage(m.chat, imageUrl, 'Here is an image.');
-    ```
-  * **`sock.downloadMedia(m)`**: Downloads media from the current message or its quoted reply. Returns a `Buffer`.
-    ```javascript
-    if (m.isMedia || m.isQuoted) {
-        const buffer = await sock.downloadMedia(m);
-        // Do something with the buffer, e.g., save it or process it
+```javascript
+module.exports = {
+    name: 'checkPremium',
+    async execute(sock, m, command) {
+        // ...logika untuk memeriksa apakah m.sender adalah pengguna premium...
+        const isPremium = true; // Ganti dengan logika database Anda
+        
+        if (!isPremium) {
+            await sock.reply(m, 'Perintah ini hanya untuk pengguna premium!');
+            return false; // Menghentikan eksekusi
+        }
+        return true; // Lanjutkan ke perintah
     }
-    ```
-  * **`sock.react(m, emoji)`**: Sends an emoji reaction to a message.
-    ```javascript
-    await sock.react(m, '👍');
-    ```
-  * **`sock.editMessage(key, newText)`**: Edits a message previously sent by the bot.
-    ```javascript
-    const sentMsg = await sock.reply(m, 'Loading...');
-    await sock.editMessage(sentMsg.key, 'Done!');
-    ```
+}
+```
 
-### 🔹 Event Handlers
+### 🔹 Objek Pesan yang Di-parse (`m`)
 
-Orion automatically handles core Baileys events. The main handlers are located in the `src/handlers/` directory.
+Setiap perintah dan *middleware* menerima objek pesan `m` yang sudah di-parse untuk interaksi yang mudah.
 
-  * **`onConnectionUpdate.js`**: Manages the connection state (`'open'`, `'close'`), handles QR code generation in the terminal, and implements automatic reconnection logic.
-  * **`onMessage.js`**: This is the core handler. It parses incoming messages, checks for commands, runs validations and middleware, and finally executes the command.
-  * **`onGroupUpdate.js`**: Handles events like members joining (`'add'`) or leaving (`'remove'`) a group. This is used for the built-in welcomer and goodbye features.
+| Properti | Tipe | Deskripsi |
+| :--- | :--- | :--- |
+| `msg` | `object` | Objek pesan mentah dari Baileys. |
+| `key` | `object` | Kunci unik pesan (`id`, `remoteJid`, dll.). |
+| `chat` | `string` | JID dari obrolan (grup atau pribadi). |
+| `sender` | `string` | JID dari penulis pesan. |
+| `isGroup` | `boolean` | `true` jika pesan berasal dari grup. |
+| `body` | `string` | Konten teks lengkap dari pesan. |
+| `args` | `string[]` | Array argumen yang mengikuti perintah. |
+| `command` | `string` | Nama perintah yang dieksekusi. |
+| `isMedia` | `boolean` | `true` jika pesan berisi media (gambar, video, stiker). |
+| `isQuoted` | `boolean` | `true` jika pesan adalah balasan ke pesan lain. |
+| `quoted` | `object` | Berisi detail pesan yang dibalas (`key`, `sender`, `msg`). |
+| `groupMetadata`|`object`| Metadata grup (jika `isGroup`), berisi subjek, partisipan, dll. |
+| `isAdmin` | `boolean` | `true` jika pengirim adalah admin grup. |
+| `isBotAdmin` | `boolean` | `true` jika bot adalah admin di grup. |
 
 -----
 
-## ⚙️ Configuration (`.env`)
+## ⚙️ Konfigurasi (`.env`)
 
-Create a `.env` file in your project root to configure your bot.
+Buat file `.env` di root proyek Anda untuk mengonfigurasi bot Anda.
 
 ```env
-# --- CORE CONFIGURATION ---
-# The name of the session file to be created
+# --- KONFIGURASI INTI ---
 SESSION_NAME=mysession
-# The prefix for all commands
 PREFIX=!
 
-# --- BUILT-IN FEATURES (set to 'true' to enable) ---
+# --- FITUR BAWAAN (atur ke 'true' untuk mengaktifkan) ---
 BUILTIN_COMMAND_PING_ENABLED=true
 BUILTIN_COMMAND_ADD_ENABLED=true
 BUILTIN_COMMAND_REMOVE_ENABLED=true
 
-# --- BUILT-IN GROUP EVENTS ---
+# --- EVENT GRUP BAWAAN ---
 BUILTIN_WELCOMER_ENABLED=true
-BUILTIN_WELCOMER_MESSAGE="Hi %%mention%%! Welcome to %%group%%. Don't forget to read the description!"
+BUILTIN_WELCOMER_MESSAGE="Hai %%mention%%! Selamat datang di %%group%%."
 BUILTIN_GOODBYE_ENABLED=true
-BUILTIN_GOODBYE_MESSAGE="Well, %%mention%% has left us..."
+BUILTIN_GOODBYE_MESSAGE="Yah, %%mention%% telah meninggalkan kita..."
+
+# --- PENGATURAN ANTRIAN (RATE LIMIT) ---
+# Aktifkan sistem antrian untuk mencegah spam dan overload
+QUEUE_ENABLED=true
+# Pengaturan Antrian Global (mengontrol semua perintah dari semua pengguna)
+QUEUE_GLOBAL_CONCURRENCY=20
+QUEUE_GLOBAL_INTERVAL_CAP=60
+QUEUE_GLOBAL_INTERVAL=1000
+# Pengaturan Antrian per Pengguna (mengontrol satu pengguna)
+QUEUE_PER_USER_CONCURRENCY=1
+QUEUE_PER_USER_INTERVAL_CAP=3
+QUEUE_PER_USER_INTERVAL=1500
 ```
 
 -----
 
-## 🤝 Contributing
+## 🤝 Berkontribusi
 
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+Kontribusi adalah apa yang membuat komunitas sumber terbuka menjadi tempat yang luar biasa untuk belajar, menginspirasi, dan berkreasi. Setiap kontribusi yang Anda buat **sangat dihargai**.
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
+Jika Anda memiliki saran yang akan membuat ini lebih baik, silakan *fork* repo dan buat *pull request*. Anda juga bisa langsung membuka *issue* dengan tag "enhancement".
 
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
+1.  *Fork* Proyek
+2.  Buat Cabang Fitur Anda (`git checkout -b feature/FiturLuarBiasa`)
+3.  *Commit* Perubahan Anda (`git commit -m 'Menambahkan FiturLuarBiasa'`)
+4.  *Push* ke Cabang (`git push origin feature/FiturLuarBiasa`)
+5.  Buka *Pull Request*
 
-## 📜 License
+## 📜 Lisensi
 
-This project is distributed under the MIT License. See `LICENSE` for more information.
+Proyek ini didistribusikan di bawah Lisensi MIT. Lihat `LICENSE` untuk informasi lebih lanjut.

@@ -1,8 +1,11 @@
 // orion/src/handlers/onMessage.js
 const { parseMessage } = require('../core/messageParser');
 const logger = require('../utils/logger');
+const PQueue = require('p-queue').default;
+const { validateArguments } = require('../core/argumentValidator'); // <-- IMPORT VALIDATOR
 
-module.exports = async (sock, m, commandHandler, prefix) => {
+// Terima middlewareHandler sebagai argumen baru
+module.exports = async (sock, m, commandHandler, middlewareHandler, prefix, globalQueue, userQueues) => {
     const msg = m.messages[0];
 
     try {
@@ -20,39 +23,52 @@ module.exports = async (sock, m, commandHandler, prefix) => {
         parsedM.args = args;
         parsedM.command = commandName;
 
-        // Guard Clauses
-        if (command.isGroupOnly && !parsedM.isGroup) {
-            return await sock.reply(parsedM, 'Perintah ini hanya bisa digunakan di dalam grup.');
-        }
-        if (command.isAdminOnly && !parsedM.isAdmin) {
-            return await sock.reply(parsedM, 'Perintah ini hanya untuk admin grup.');
-        }
-        if (command.isBotAdminOnly && !parsedM.isBotAdmin) {
-            return await sock.reply(parsedM, 'Bot harus menjadi admin untuk menjalankan perintah ini.');
+        // 1. Jalankan middleware
+        const passedMiddleware = await middlewareHandler.run(sock, parsedM, command);
+        if (!passedMiddleware) {
+            return; // Hentikan eksekusi jika salah satu middleware gagal
         }
 
-        // if (commandHandler.isUserOnCooldown(parsedM.sender, command)) {
-        //     logger.warn("Pengguna dalam masa cooldown, perintah diabaikan.", {
-        //         sender: parsedM.sender,
-        //         command: commandName
-        //     });
-        //     return;
-        // }
+        // 2. Validasi argumen
+        const areArgsValid = await validateArguments(sock, parsedM, command);
+        if (!areArgsValid) return;
+        
+        // Fungsi untuk mengeksekusi perintah
+        const executeCommand = async () => {
+            logger.info(
+              `EKSEKUSI: Menjalankan CMD "${parsedM.command}" dari ${parsedM.sender.split('@')[0]} (${parsedM.isGroup ? parsedM.groupMetadata.subject : 'PM'})`
+            );
+            try {
+                await command.execute(sock, parsedM, logger);
+            } catch (err) {
+                logger.error("Terjadi error saat eksekusi perintah", { 
+                    command: commandName, 
+                    sender: parsedM.sender, 
+                    err: err.stack || err.message 
+                });
+                await sock.reply(parsedM, 'Maaf, terjadi kesalahan saat menjalankan perintah.');
+            }
+        };
 
-      logger.info(
-  `CMD "${parsedM.command}" dari ${parsedM.sender.split('@')[0]} (${parsedM.isGroup ? parsedM.groupMetadata.subject : 'PM'})`
-);
-
-        try {
-            await command.execute(sock, parsedM, logger);
-
-        } catch (err) {
-            logger.error("Terjadi error saat eksekusi perintah", { 
-                command: commandName, 
-                sender: parsedM.sender, 
-                err: err.stack || err.message 
+        // 3. Jalankan perintah (via antrian atau langsung)
+        if (globalQueue && userQueues) {
+            const senderId = parsedM.sender;
+            if (!userQueues.has(senderId)) {
+                userQueues.set(senderId, new PQueue({
+                    concurrency: parseInt(process.env.QUEUE_PER_USER_CONCURRENCY, 10) || 1,
+                    intervalCap: parseInt(process.env.QUEUE_PER_USER_INTERVAL_CAP, 10) || 3,
+                    interval: parseInt(process.env.QUEUE_PER_USER_INTERVAL, 10) || 1500
+                }));
+            }
+            const userQueue = userQueues.get(senderId);
+            userQueue.add(() => {
+                logger.info(`[USER_QUEUE] Pengguna ${senderId.split('@')[0]} lolos. Menambahkan CMD "${commandName}" ke antrian global.`);
+                globalQueue.add(executeCommand);
+            }).catch(err => {
+                 logger.error("Error saat menambahkan ke antrian pengguna", { err });
             });
-            await sock.reply(parsedM, 'Maaf, terjadi kesalahan saat menjalankan perintah.');
+        } else {
+            await executeCommand();
         }
 
     } catch (err) {

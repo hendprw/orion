@@ -1,19 +1,23 @@
-// orion/src/builtin/commands/add.js
+// src/builtin/commands/add.js
 module.exports = {
     name: 'add',
     description: 'Menambahkan anggota ke grup.',
     isGroupOnly: true,
     isBotAdminOnly: true,
     isAdminOnly: true,
+    // --- ATURAN ARGUMEN BARU ---
+    args: {
+        min: 1,
+        max: 1,
+        usage: '<nomor_hp>',
+        types: ['number'] // Memastikan argumen adalah angka
+    },
     async execute(sock, m) {
-        if (!m.args[0] && !m.isQuoted) {
-            return await sock.reply(m, 'Berikan nomor atau reply pesan target.');
-        }
-
         let targetJid;
+        
         if (m.args[0]) {
             targetJid = m.args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
-        } else if (m.isQuoted) {
+        } else if (m.isQuoted) { 
             targetJid = m.quoted.sender;
         }
 
