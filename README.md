@@ -29,17 +29,11 @@ Dibangun di atas <a href="[https://github.com/WhiskeySockets/Baileys](https://gi
 Mulai proyek baru dan instal dependensi yang diperlukan. Untuk pengalaman terbaik, gunakan CLI `create-orion-bot`.
 
 ```bash
-npx create-orion-bot nama-bot-saya
+npx orion-installer nama-bot-saya
 cd nama-bot-saya
-npm install
+npm start
 ```
-
-Atau, secara manual:
-
-```bash
-npm init -y
-npm install orion-wa dotenv
-```
+-----S
 
 ### 2. Struktur Proyek
 
@@ -82,7 +76,7 @@ bot.connect();
 
 -----
 
-## 核心概念 (Konsep Inti)
+## (Konsep Inti)
 
 Memahami konsep inti Orion adalah kunci untuk membuka potensi penuhnya.
 
@@ -140,22 +134,20 @@ module.exports = {
   * **Middleware Bawaan**: Diaktifkan dengan properti boolean pada objek perintah seperti `isGroupOnly: true`.
   * **Middleware Kustom**: Buat file di direktori `middlewares/` Anda, lalu terapkan menggunakan properti `middlewares: ['namaMiddleware']` pada perintah.
 
-**Contoh Middleware Kustom: `middlewares/checkPremium.js`**
+**Contoh Middleware Kustom: `middlewares/isBotAdmin.js`**
 
 ```javascript
+// src/middlewares/isBotAdminOnly.js
 module.exports = {
-    name: 'checkPremium',
-    async execute(sock, m, command) {
-        // ...logika untuk memeriksa apakah m.sender adalah pengguna premium...
-        const isPremium = true; // Ganti dengan logika database Anda
-        
-        if (!isPremium) {
-            await sock.reply(m, 'Perintah ini hanya untuk pengguna premium!');
-            return false; // Menghentikan eksekusi
+    name: 'isBotAdminOnly',
+    execute: async (sock, m, command) => {
+        if (command.isBotAdminOnly && !m.isBotAdmin) {
+            await sock.reply(m, 'Bot harus menjadi admin untuk menjalankan perintah ini.');
+            return false;
         }
-        return true; // Lanjutkan ke perintah
+        return true;
     }
-}
+};
 ```
 
 ### 🔹 Objek Pesan yang Di-parse (`m`)
