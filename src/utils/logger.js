@@ -1,14 +1,18 @@
-// orion/src/utils/logger.js
+// =====================================================
+// FILE: src/utils/logger.js
+// =====================================================
 const pino = require('pino');
-const pretty = require('pino-pretty');
 
-const stream = pretty({
-    colorize: true,
-    levelFirst: true,
-    translateTime: 'SYS:standard',
-    ignore: 'pid,hostname',
+const logger = pino({
+    transport: {
+        target: 'pino-pretty',
+        options: {
+            colorize: true,
+            translateTime: 'SYS:standard',
+            ignore: 'pid,hostname'
+        }
+    },
+    level: process.env.LOG_LEVEL || 'info'
 });
-
-const logger = pino({ level: 'info' }, stream);
 
 module.exports = logger;

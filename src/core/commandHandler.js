@@ -1,82 +1,161 @@
-// orion/src/core/commandHandler.js
+// =====================================================
+// FILE 2: src/core/commandHandler.js (FIXED)
+// =====================================================
 const fs = require('fs');
 const path = require('path');
 const chokidar = require('chokidar');
+const EventEmitter = require('events');
 
-class CommandHandler {
-    /**
-     * @param {string} folderPath - Path ke direktori perintah pengguna.
-     * @param {object} logger - Instance logger (pino).
-     * @param {number} defaultCooldown - Waktu cooldown default dalam detik.
-     */
+/**
+ * Enhanced CommandHandler dengan cooldown, stats, dan error recovery
+ * @class CommandHandler
+ * @extends EventEmitter
+ */
+class CommandHandler extends EventEmitter {
     constructor(folderPath, logger, defaultCooldown) {
+        super();
         this.commands = new Map();
         this.aliases = new Map();
         this.cooldowns = new Map();
         this.folderPath = folderPath ? path.resolve(folderPath) : null;
         this.logger = logger;
-        // this.defaultCooldown = defaultCooldown || 0; // Default cooldown 3 detik jika tidak disediakan
+        this.defaultCooldown = defaultCooldown || 3;
+        this.commandStats = new Map();
+        this.loadErrors = [];
     }
 
-    // /**
-    //  * Memeriksa dan mengatur cooldown untuk pengguna dan perintah.
-    //  * @param {string} userId - JID pengguna.
-    //  * @param {object} command - Objek perintah yang akan dieksekusi.
-    //  * @returns {boolean} `true` jika pengguna dalam masa cooldown, `false` sebaliknya.
-    //  */
-    // isUserOnCooldown(userId, command) {
-    //     const now = Date.now();
-    //     const cooldownAmount = (command.cooldown || this.defaultCooldown) * 1000;
+    /**
+     * Check dan set cooldown dengan atomic operation
+     * @param {string} userId - User JID
+     * @param {object} command - Command object
+     * @returns {{onCooldown: boolean, timeLeft?: number}}
+     */
+    isUserOnCooldown(userId, command) {
+        const now = Date.now();
+        const cooldownAmount = (command.cooldown ?? this.defaultCooldown) * 1000;
         
-    //     const userCooldowns = this.cooldowns.get(userId) || new Map();
+        if (!this.cooldowns.has(userId)) {
+            this.cooldowns.set(userId, new Map());
+        }
         
-    //     if (userCooldowns.has(command.name)) {
-    //         const expirationTime = userCooldowns.get(command.name) + cooldownAmount;
-    //         if (now < expirationTime) {
-    //             return true;
-    //         }
-    //     }
+        const userCooldowns = this.cooldowns.get(userId);
         
-    //     userCooldowns.set(command.name, now);
-    //     this.cooldowns.set(userId, userCooldowns);
+        if (userCooldowns.has(command.name)) {
+            const expirationTime = userCooldowns.get(command.name);
+            if (now < expirationTime) {
+                const timeLeft = Math.ceil((expirationTime - now) / 1000);
+                return { onCooldown: true, timeLeft };
+            }
+        }
         
-    //     setTimeout(() => userCooldowns.delete(command.name), cooldownAmount);
+        userCooldowns.set(command.name, now + cooldownAmount);
+        
+        // Auto cleanup setelah cooldown selesai
+        setTimeout(() => {
+            userCooldowns.delete(command.name);
+            if (userCooldowns.size === 0) {
+                this.cooldowns.delete(userId);
+            }
+        }, cooldownAmount);
 
-    //     return false;
-    // }
+        return { onCooldown: false };
+    }
 
     /**
-     * Memuat sebuah file perintah dan menyimpannya.
-     * @param {string} filePath - Path absolut ke file perintah.
+     * Validasi struktur command
+     * @param {object} command - Command object
+     * @returns {boolean}
+     */
+    validateCommandStructure(command) {
+        if (!command.name || typeof command.name !== 'string') {
+            this.logger.warn('Command missing name or name is not string');
+            return false;
+        }
+        if (!command.execute || typeof command.execute !== 'function') {
+            this.logger.warn(`Command ${command.name} missing execute function`);
+            return false;
+        }
+        
+        // Validate optional fields
+        if (command.aliases && !Array.isArray(command.aliases)) {
+            this.logger.warn(`Command ${command.name} aliases must be array`);
+            return false;
+        }
+        
+        if (command.cooldown !== undefined && typeof command.cooldown !== 'number') {
+            this.logger.warn(`Command ${command.name} cooldown must be number`);
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Load single command file dengan proper error handling
+     * @param {string} filePath - Absolute path to command file
      */
     loadCommand(filePath) {
         try {
-            delete require.cache[require.resolve(filePath)];
+            // Clear cache dengan aman
+            const resolvedPath = require.resolve(filePath);
+            if (require.cache[resolvedPath]) {
+                delete require.cache[resolvedPath];
+            }
+            
             const command = require(filePath);
 
-            if (!command.name || !command.execute) {
-                this.logger.warn(`File perintah dilewati (format tidak valid): ${path.basename(filePath)}`);
+            // Validasi command structure
+            if (!this.validateCommandStructure(command)) {
+                this.loadErrors.push({ file: filePath, error: 'Invalid structure' });
                 return;
             }
 
-            this.commands.set(command.name, command);
-            if (command.aliases && Array.isArray(command.aliases)) {
-                command.aliases.forEach(alias => this.aliases.set(alias, command.name));
+            // Check for duplicate command names
+            if (this.commands.has(command.name)) {
+                this.logger.warn(`Command ${command.name} already exists, overwriting...`);
             }
+
+            this.commands.set(command.name, command);
+            
+            // Register aliases
+            if (command.aliases?.length) {
+                command.aliases.forEach(alias => {
+                    if (this.aliases.has(alias)) {
+                        this.logger.warn(`Alias "${alias}" conflict, already used by ${this.aliases.get(alias)}`);
+                    }
+                    this.aliases.set(alias, command.name);
+                });
+            }
+
+            // Initialize stats
+            if (!this.commandStats.has(command.name)) {
+                this.commandStats.set(command.name, { 
+                    uses: 0, 
+                    errors: 0,
+                    lastUsed: null,
+                    totalExecutionTime: 0,
+                    avgExecutionTime: 0
+                });
+            }
+            
+            this.emit('commandLoaded', command.name);
+            
         } catch (err) {
-            this.logger.error({ err }, `Gagal memuat perintah dari file: ${filePath}`);
+            this.logger.error({ err, file: filePath }, 'Failed to load command');
+            this.loadErrors.push({ file: filePath, error: err.message });
         }
     }
 
     /**
-     * Memuat semua perintah dari sebuah direktori secara rekursif.
-     * @param {string} dir - Path ke direktori.
+     * Load semua commands dari directory secara rekursif
+     * @param {string} dir - Directory path
      */
     loadCommandsFromDir(dir) {
         if (!fs.existsSync(dir)) {
-            this.logger.warn(`Direktori perintah tidak ditemukan: ${dir}`);
+            this.logger.warn(`Commands directory not found: ${dir}`);
             return;
         }
+        
         const files = fs.readdirSync(dir);
         for (const file of files) {
             const fullPath = path.join(dir, file);
@@ -89,22 +168,22 @@ class CommandHandler {
     }
 
     /**
-     * Memuat semua perintah kustom yang disediakan oleh pengguna.
+     * Load custom user commands
      */
     loadCustomCommands() {
         if (!this.folderPath) return;
-        this.logger.info('Memuat perintah kustom dari direktori pengguna...');
+        this.logger.info('Loading custom commands...');
         this.loadCommandsFromDir(this.folderPath);
     }
 
     /**
-     * Memuat semua perintah bawaan dari direktori internal framework.
+     * Load builtin framework commands
      */
     loadBuiltinCommands() {
-        this.logger.info('Memuat perintah bawaan...');
+        this.logger.info('Loading builtin commands...');
         const builtinDir = path.join(__dirname, '..', 'builtin', 'commands');
         if (!fs.existsSync(builtinDir)) {
-            this.logger.warn('Direktori perintah bawaan tidak ditemukan.');
+            this.logger.warn('Builtin commands directory not found');
             return;
         }
 
@@ -123,44 +202,131 @@ class CommandHandler {
         }
         
         if (loadedCount > 0) {
-            this.logger.info(`Total ${loadedCount} perintah bawaan berhasil dimuat.`);
+            this.logger.info(`Loaded ${loadedCount} builtin commands`);
         } else {
-            this.logger.info('Tidak ada perintah bawaan yang diaktifkan.');
+            this.logger.info('ℹNo builtin commands enabled');
         }
     }
 
+    /**
+     * Watch commands directory untuk hot-reloading
+     */
     watchCommands() {
         if (!this.folderPath) return;
-        this.logger.info(`Hot-reloading diaktifkan untuk: ${path.basename(this.folderPath)}`);
+        this.logger.info(`Hot-reloading enabled for: ${path.basename(this.folderPath)}`);
 
         const watcher = chokidar.watch(this.folderPath, {
             ignored: /(^|[\/\\])\../,
             persistent: true,
+            ignoreInitial: true
         });
 
         watcher
             .on('change', filePath => {
-                this.logger.info(`Perubahan pada '${path.basename(filePath)}', memuat ulang semua perintah...`);
-                this.commands.clear();
-                this.aliases.clear();
-                this.loadBuiltinCommands();
-                this.loadCustomCommands();
+                this.logger.info(`File changed: ${path.basename(filePath)}`);
+                this.loadCommand(filePath);
+                this.emit('commandReloaded', path.basename(filePath));
             })
             .on('add', filePath => {
-                // this.logger.info(`File baru '${path.basename(filePath)}' terdeteksi, memuat...`);
+                this.logger.info(`➕ New file detected: ${path.basename(filePath)}`);
                 this.loadCommand(filePath);
+            })
+            .on('unlink', filePath => {
+                this.logger.info(`➖ File removed: ${path.basename(filePath)}`);
+                const commandName = path.parse(filePath).name;
+                this.commands.delete(commandName);
+                this.commandStats.delete(commandName);
+                this.emit('commandUnloaded', commandName);
+            })
+            .on('error', error => {
+                this.logger.error({ err: error }, 'Watcher error');
             });
     }
 
+    /**
+     * Get command by name atau alias
+     * @param {string} commandName - Command name or alias
+     * @returns {object|null}
+     */
     getCommand(commandName) {
         if (this.commands.has(commandName)) {
             return this.commands.get(commandName);
         }
         if (this.aliases.has(commandName)) {
-            const alias = this.aliases.get(commandName);
-            return this.commands.get(alias);
+            const mainName = this.aliases.get(commandName);
+            return this.commands.get(mainName);
         }
         return null;
+    }
+
+    /**
+     * Track command usage untuk analytics
+     * @param {string} commandName - Command name
+     * @param {boolean} success - Execution success status
+     * @param {number} executionTime - Execution time in ms
+     */
+    trackCommandUsage(commandName, success = true, executionTime = 0) {
+        const stats = this.commandStats.get(commandName);
+        if (stats) {
+            stats.uses++;
+            stats.lastUsed = new Date();
+            if (!success) {
+                stats.errors++;
+            }
+            if (executionTime > 0) {
+                stats.totalExecutionTime += executionTime;
+                stats.avgExecutionTime = Math.round(stats.totalExecutionTime / stats.uses);
+            }
+        }
+    }
+
+    /**
+     * Get comprehensive statistics
+     * @returns {object}
+     */
+    getStats() {
+        return {
+            totalCommands: this.commands.size,
+            totalAliases: this.aliases.size,
+            activeCooldowns: this.cooldowns.size,
+            loadErrors: this.loadErrors.length,
+            commandStats: Object.fromEntries(this.commandStats),
+            topCommands: this.getTopCommands(5)
+        };
+    }
+
+    /**
+     * Get top N most used commands
+     * @param {number} n - Number of commands
+     * @returns {Array}
+     */
+    getTopCommands(n = 5) {
+        return Array.from(this.commandStats.entries())
+            .sort((a, b) => b[1].uses - a[1].uses)
+            .slice(0, n)
+            .map(([name, stats]) => ({ name, uses: stats.uses }));
+    }
+
+    /**
+     * Clear all cooldowns untuk user tertentu
+     * @param {string} userId - User JID
+     */
+    clearUserCooldowns(userId) {
+        this.cooldowns.delete(userId);
+    }
+
+    /**
+     * Reset command statistics
+     */
+    resetStats() {
+        this.commandStats.forEach(stats => {
+            stats.uses = 0;
+            stats.errors = 0;
+            stats.lastUsed = null;
+            stats.totalExecutionTime = 0;
+            stats.avgExecutionTime = 0;
+        });
+        this.logger.info('📊 Statistics reset');
     }
 }
 

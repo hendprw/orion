@@ -1,37 +1,86 @@
-// orion/src/handlers/onConnectionUpdate.js
+// =====================================================
+// FILE 5: src/handlers/onConnectionUpdate.js (ENHANCED)
+// =====================================================
 const { DisconnectReason } = require('@whiskeysockets/baileys');
 const { Boom } = require('@hapi/boom');
+const qrcode = require('qrcode-terminal');
+const CONSTANTS = require('../config/constants');
 const logger = require('../utils/logger');
-const qrcode = require('qrcode-terminal'); // <-- Tambahkan ini
+
+// Reconnect strategy dengan exponential backoff
+let reconnectAttempts = 0;
+let reconnectTimeout = null;
 
 /**
- * Menangani update koneksi.
- * @param {object} update 
- * @param {Function} connectFn Fungsi untuk menjalankan koneksi ulang.
+ * Enhanced connection update handler dengan reconnection strategy
  */
 module.exports = (update, connectFn) => {
-    const { connection, lastDisconnect, qr } = update; // <-- Tambahkan 'qr'
+    const { connection, lastDisconnect, qr } = update;
 
-    // === AWAL BLOK BARU ===
-    // Logika untuk menampilkan QR code di terminal
+    // Display QR code dengan formatting yang lebih baik
     if (qr) {
-        logger.info('QR Code diterima, silakan scan:');
+        console.log('\n' + '═'.repeat(60));
+        logger.info('📱 Scan QR Code berikut dengan WhatsApp:');
+        console.log('═'.repeat(60));
         qrcode.generate(qr, { small: true });
+        console.log('═'.repeat(60));
+        console.log('💡 Tips: Buka WhatsApp → Settings → Linked Devices → Link a Device\n');
     }
-    // === AKHIR BLOK BARU ===
 
     if (connection === 'close') {
-        const reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-        const shouldReconnect = reason !== DisconnectReason.loggedOut;
+        const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
+        const reason = DisconnectReason[statusCode] || 'Unknown';
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
         
-        logger.error(`Koneksi terputus: ${DisconnectReason[reason] || 'Unknown'}. Mencoba menghubungkan kembali: ${shouldReconnect}`);
+        logger.warn({
+            statusCode,
+            reason,
+            shouldReconnect,
+            attempts: reconnectAttempts
+        }, '🔌 Connection closed');
 
-        if (shouldReconnect) {
-            connectFn();
+        if (shouldReconnect && reconnectAttempts < CONSTANTS.RECONNECT.MAX_ATTEMPTS) {
+            // Clear previous timeout if exists
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+
+            // Exponential backoff dengan cap
+            const delay = Math.min(
+                CONSTANTS.RECONNECT.BASE_DELAY * Math.pow(2, reconnectAttempts),
+                CONSTANTS.RECONNECT.MAX_DELAY
+            );
+            
+            reconnectAttempts++;
+            
+            logger.info({
+                delay: `${delay}ms`,
+                attempt: `${reconnectAttempts}/${CONSTANTS.RECONNECT.MAX_ATTEMPTS}`
+            }, '🔄 Reconnecting...');
+            
+            reconnectTimeout = setTimeout(() => {
+                connectFn();
+            }, delay);
+            
+        } else if (reconnectAttempts >= CONSTANTS.RECONNECT.MAX_ATTEMPTS) {
+            logger.error('❌ Max reconnection attempts reached. Manual restart required.');
+            logger.info('Please restart the bot manually.');
+            process.exit(1);
         } else {
-             logger.error("Tidak dapat terhubung kembali (Logged Out). Hapus folder session dan coba lagi.");
+            logger.error('🚪 Logged out. Delete session folder and restart bot.');
+            logger.info('Steps: 1) Delete "session" folder, 2) Restart bot, 3) Scan QR');
+            process.exit(0);
         }
+        
     } else if (connection === 'open') {
-        logger.info('Berhasil terhubung ke WhatsApp.');
+        reconnectAttempts = 0; // Reset on successful connection
+        if (reconnectTimeout) {
+            clearTimeout(reconnectTimeout);
+            reconnectTimeout = null;
+        }
+        logger.info('✅ Successfully connected to WhatsApp');
+        
+    } else if (connection === 'connecting') {
+        logger.info('🔄 Connecting to WhatsApp...');
     }
 };
